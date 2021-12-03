@@ -1,0 +1,179 @@
+#include <vector>
+#include "TFile.h"
+#include "TTree.h"
+#include "TCanvas.h"
+#include "TFrame.h"
+#include "TH1F.h"
+#include "TH2F.h"
+#include "TBenchmark.h"
+#include "TRandom.h"
+#include "TSystem.h"
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+using namespace std;
+int cc =0;
+
+TH1D * projh2X;
+TH1D * projh2Y;
+TPad *right_pad, *top_pad;
+
+void POCA3_slab()
+{
+
+  TCanvas *c1 = new TCanvas("c1","",0,0,900,900);
+  TCanvas *c2 = new TCanvas("c2","",0,0,900,900);
+  TCanvas *c3 = new TCanvas("c3","",0,0,900,900);
+  gStyle->SetOptStat(0);
+   
+  TH2F* histo1 = new TH2F("","",100,-450.,450.,100,-450.,450.);
+  TH2F* histo2= new TH2F("","",100,-450.,450.,100,-450.,450.);
+  TH2F* histo3= new TH2F("","",100,-450.,450.,100,-450.,450.);
+   //TH1F* his = new TH1F("","",1000,0.,10000.);
+   //TH1F* his1 = new TH1F("","",1000,0.,10000.);
+   //TH1F* his2 = new TH1F("","",1000,0.,10000.);
+
+  int evt;
+  double R1XX,R1YY,R1ZZ,R2XX,R2YY,R2ZZ,R3XX,R3YY,R3ZZ,R4XX,R4YY,R4ZZ,R5XX,R5YY,R5ZZ,R6XX,R6YY,R6ZZ,mom;
+
+  long double div,u1,u2,u3,v1,v2,v3,w01,w02,w03,a,b,c,d,e,s,t,P1,P2,P3,Q1,Q2,Q3,M1,M2,M3,kxu,kyu,kxl,kyl,thetax,thetay,theta,corr_theta,akxu,akyu,noa_theta =0.;
+  int line_no =0;
+  std::fstream outfile;
+  std::ifstream in,in1;
+  //outfile.open("Det45PbFull.txt",std::ios::out|std::ios::app);//
+  //random noise for spatial resolution.
+  double noise = 0.2;
+ 
+  in.open ("raw.txt");
+  
+
+
+  while (!in.eof())
+    {
+     in>>evt>>R1XX>>R1YY>>R1ZZ>>R2XX>>R2YY>>R2ZZ>>R3XX>>R3YY>>R3ZZ>>R4XX>>R4YY>>R4ZZ>>R5XX>>R5YY>>R5ZZ>>R6XX>>R6YY>>R6ZZ>>mom;
+
+      // include noise
+
+      R1XX = gRandom->Gaus(R1XX,noise);
+      R1YY = gRandom->Gaus(R1YY,noise);
+      R1ZZ = gRandom->Gaus(R1ZZ,noise);
+      R2XX = gRandom->Gaus(R2XX,noise);
+      R2YY = gRandom->Gaus(R2YY,noise);
+      R2ZZ = gRandom->Gaus(R2ZZ,noise);
+      R3XX = gRandom->Gaus(R3XX,noise);
+      R3YY = gRandom->Gaus(R3YY,noise);
+      R3ZZ = gRandom->Gaus(R3ZZ,noise);
+      R4XX = gRandom->Gaus(R4XX,noise);
+      R4YY = gRandom->Gaus(R4YY,noise);
+      R4ZZ = gRandom->Gaus(R4ZZ,noise);
+      R5XX = gRandom->Gaus(R5XX,noise);
+      R5YY = gRandom->Gaus(R5YY,noise);
+      R5ZZ = gRandom->Gaus(R5ZZ,noise);
+      R6XX = gRandom->Gaus(R6XX,noise);
+      R6YY = gRandom->Gaus(R6YY,noise);
+      R6ZZ = gRandom->Gaus(R6ZZ,noise);
+      
+      
+      
+      line_no++;
+      u1 = R3XX-R1XX; 
+      u2 = R3YY-R1YY;
+      u3 = R3ZZ-R1ZZ;
+      v1 = R6XX-R4XX;
+      v2 = R6YY-R4YY;
+      v3 = R6ZZ-R4ZZ;
+      w01 = R1XX-R4XX;      // w0 =p0-q0, richeis thesis
+      w02 = R1YY-R4YY;
+      w03 = R1ZZ-R4ZZ;
+
+
+      a = (pow(u1,2)+pow(u2,2)+pow(u3,2));
+      b = ((u1*v1)+(u2*v2)+(u3*v3));
+      c = (pow(v1,2)+pow(v2,2)+pow(v3,2));
+      d = ((u1*w01)+(u2*w02)+(u3*w03));
+      e = ((w01*v1)+(w02*v2)+(w03*v3));
+      div = (a*c)-pow(b,2);
+      if (div==0.){div=0.000001;}
+       
+      s = ((b*e)-(c*d))/div;
+      t = ((a*e)-(b*d))/div;
+      //cout<<"  "<<a<<" "<<b<<" "<<c<<" "<<d<<" "<<e<<" "<<s<<" "<<t<<endl;
+      //cout <<X1[ij]<<"  "<<t<<endl;
+      P1 = R1XX+(s*u1);
+      P2 = R1YY+(s*u2);
+      P3 = R1ZZ+(s*u3);
+      Q1 = R4XX+(t*v1);
+      Q2 = R4YY+(t*v2);
+      Q3 = R4ZZ+(t*v3);
+      //" "<<P1<<" "<<P2<<" "<<P3<<" "<<Q1<<" "<<Q2<<" "<<Q3<<" "<<endl;
+      M1 = (P1+Q1)/2;
+      M2 = (P2+Q2)/2;
+      M3 = (P3+Q3)/2;
+      //-------------straight tracks only-----------------------------
+
+      
+
+      
+
+      //----scattering angle calculation--------------------------------------------
+      kxu = (R3ZZ-R1ZZ)/(R3XX-R1XX);
+      kyu = (R3ZZ-R1ZZ)/(R3YY-R1YY);
+      kxl = (R6ZZ-R4ZZ)/(R6XX-R4XX);
+      kyl = (R6ZZ-R4ZZ)/(R6YY-R4YY);
+      thetax = atan(abs((kxl-kxu)/(1+kxl*kxu)));
+      thetay = atan(abs((kyl-kyu)/(1+kyl*kyu)));
+      theta = sqrt(thetax*thetax+thetay*thetay)/2.0;
+  //    if ( mom>50000.0|| theta<0.005)
+//	{
+  //    corr_theta = theta;
+	//}
+    //  else {corr_theta = theta*(mom/600.0);}
+      akxu = abs(atan(kxu)*(180.0/3.14));
+      akyu = abs(atan(kyu)*(180.0/3.14));
+
+     
+       
+      //      if (evt >= 60000000) break;  //500000000
+
+      //----momentum scaling-----------------------
+      
+
+      
+      //noa_theta = 
+
+     if (theta>0.00)
+	{histo1->Fill(M1,M2,theta);
+		 
+	}
+
+    }
+  in.close();
+  //  outfile.close();
+  
+    cout <<"---line no = "<<evt<<endl;
+ 
+    c1->cd();
+    histo1->Draw("colz");
+    histo1->SetTitle ("S-map");
+    histo1->GetXaxis()->SetTitle ("x-axis (mm)");
+    histo1->GetYaxis()->SetTitle ("y-axis (mm)");
+/*
+    c2->cd();
+    histo2->Draw("colz");
+    histo2->SetTitle ("Corrected Theta");
+    histo2->GetXaxis()->SetTitle ("x-axis (mm)");
+    histo2->GetYaxis()->SetTitle ("y-axis (mm)");
+      
+    c3->cd();
+    histo3->Draw("colz");
+    histo3->SetTitle ("Normalized Theta");
+    histo3->GetXaxis()->SetTitle ("x-axis (mm)");
+    histo3->GetYaxis()->SetTitle ("y-axis (mm)");
+     */
+
+      //      c1->SaveAs("r2.pdf");
+      
+}
+
+
+

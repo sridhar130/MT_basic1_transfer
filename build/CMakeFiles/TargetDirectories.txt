@@ -1,0 +1,8 @@
+/home/sridhar/test_examples/MT_basic1_transfer/build/CMakeFiles/install/strip.dir
+/home/sridhar/test_examples/MT_basic1_transfer/build/CMakeFiles/install/local.dir
+/home/sridhar/test_examples/MT_basic1_transfer/build/CMakeFiles/install.dir
+/home/sridhar/test_examples/MT_basic1_transfer/build/CMakeFiles/list_install_components.dir
+/home/sridhar/test_examples/MT_basic1_transfer/build/CMakeFiles/rebuild_cache.dir
+/home/sridhar/test_examples/MT_basic1_transfer/build/CMakeFiles/edit_cache.dir
+/home/sridhar/test_examples/MT_basic1_transfer/build/CMakeFiles/B1.dir
+/home/sridhar/test_examples/MT_basic1_transfer/build/CMakeFiles/MT.dir

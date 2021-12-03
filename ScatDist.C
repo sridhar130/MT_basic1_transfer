@@ -1,0 +1,257 @@
+#include <vector>
+#include "TFile.h"
+#include "TTree.h"
+#include "TCanvas.h"
+#include "TFrame.h"
+#include "TH1F.h"
+#include "TH2F.h"
+#include "TBenchmark.h"
+#include "TRandom.h"
+#include "TSystem.h"
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+using namespace std;
+int cc =0;
+
+TH1D * projh2X;
+TH1D * projh2Y;
+TPad *right_pad, *top_pad;
+
+void ScatDist()
+{
+
+  TCanvas *c1 = new TCanvas("c1","",0,0,1000,1000);
+  TCanvas *c2 = new TCanvas("c2","",0,0,1000,1000);
+  //  c1-> Divide(2,1);
+  // TPad *center_pad = new TPad("center_pad", "center_pad",0.0,0.0,0.6,0.6);
+  // center_pad->Draw();
+   gStyle->SetOptStat(0);
+  //right_pad = new TPad("right_pad", "right_pad",0.55,0.0,1.0,0.6);
+  // right_pad->Draw();
+
+  //top_pad = new TPad("top_pad", "top_pad",0.0,0.55,0.6,1.0);
+  //top_pad->Draw();
+   
+   //  TH2F* histo = new TH2F("","",75,-250.,250.,75,-250.,250.);
+   // TH2F* histo1 = new TH2F("","",45,-150.,150.,45,-150.,150.);
+   TH1D* h1 = new TH1D("< 3 GeV","",100,-50.0,50.);
+   TH1D* h2 = new TH1D("> 3 GeV","",100,-50.0,50.);
+   TH1F* h3 = new TH1F("no threshold","",100,0.,10.);
+   TH1F* h4 = new TH1F("5 mrad","",100,0.,10.);
+   TH1F* h5 = new TH1F("10 mrad","",100,0.,10.);
+  int evt;
+  double R1XX,R1YY,R1ZZ,R2XX,R2YY,R2ZZ,R3XX,R3YY,R3ZZ,R4XX,R4YY,R4ZZ,R5XX,R5YY,R5ZZ,R6XX,R6YY,R6ZZ,mom,R7XX,R7YY,R7ZZ,R8XX,R8YY,R8ZZ;
+
+  long double div,u1,u2,u3,v1,v2,v3,w01,w02,w03,a,b,c,d,e,s,t,P1,P2,P3,Q1,Q2,Q3,M1,M2,M3,kxu,kyu,kxl,kyl,kxs,kys,thetax,thetax1,thetay,theta,corr_theta,thetaxs,thetays,kTheta =0.;
+  int line_no =0;
+  std::fstream outfile;
+  std::ifstream in;
+  //outfile.open("Det45PbFull.txt",std::ios::out|std::ios::app);//
+  //random noise for spatial resolution.
+  double noise = 0.2;
+
+  in.open ("FrCubeConcreteSlab.txt");
+
+  while (!in.eof())
+    {
+      in>>evt>>R1XX>>R1YY>>R1ZZ>>R2XX>>R2YY>>R2ZZ>>R3XX>>R3YY>>R3ZZ>>R4XX>>R4YY>>R4ZZ>>R5XX>>R5YY>>R5ZZ>>R6XX>>R6YY>>R6ZZ>>R7XX>>R7YY>>R7ZZ>>R8XX>>R8YY>>R8ZZ>>mom;
+
+      // include noise
+
+      R1XX = gRandom->Gaus(R1XX,noise);
+      R1YY = gRandom->Gaus(R1YY,noise);
+      R1ZZ = gRandom->Gaus(R1ZZ,noise);
+      R2XX = gRandom->Gaus(R2XX,noise);
+      R2YY = gRandom->Gaus(R2YY,noise);
+      R2ZZ = gRandom->Gaus(R2ZZ,noise);
+      R3XX = gRandom->Gaus(R3XX,noise);
+      R3YY = gRandom->Gaus(R3YY,noise);
+      R3ZZ = gRandom->Gaus(R3ZZ,noise);
+      R4XX = gRandom->Gaus(R4XX,noise);
+      R4YY = gRandom->Gaus(R4YY,noise);
+      R4ZZ = gRandom->Gaus(R4ZZ,noise);
+      R5XX = gRandom->Gaus(R5XX,noise);
+      R5YY = gRandom->Gaus(R5YY,noise);
+      R5ZZ = gRandom->Gaus(R5ZZ,noise);
+      R6XX = gRandom->Gaus(R6XX,noise);
+      R6YY = gRandom->Gaus(R6YY,noise);
+      R6ZZ = gRandom->Gaus(R6ZZ,noise);
+      R7XX = gRandom->Gaus(R7XX,noise);
+      R7YY = gRandom->Gaus(R7YY,noise);
+      R7ZZ = gRandom->Gaus(R7ZZ,noise);
+      
+      
+      line_no++;
+      u1 = R3XX-R1XX; 
+      u2 = R3YY-R1YY;
+      u3 = R3ZZ-R1ZZ;
+      v1 = R6XX-R4XX;
+      v2 = R6YY-R4YY;
+      v3 = R6ZZ-R4ZZ;
+      w01 = R1XX-R4XX;      // w0 =p0-q0, richeis thesis
+      w02 = R1YY-R4YY;
+      w03 = R1ZZ-R4ZZ;
+
+
+      a = (pow(u1,2)+pow(u2,2)+pow(u3,2));
+      b = ((u1*v1)+(u2*v2)+(u3*v3));
+      c = (pow(v1,2)+pow(v2,2)+pow(v3,2));
+      d = ((u1*w01)+(u2*w02)+(u3*w03));
+      e = ((w01*v1)+(w02*v2)+(w03*v3));
+      div = (a*c)-pow(b,2);
+      if (div==0.){div=0.000001;}
+       
+      s = ((b*e)-(c*d))/div;
+      t = ((a*e)-(b*d))/div;
+      //cout<<"  "<<a<<" "<<b<<" "<<c<<" "<<d<<" "<<e<<" "<<s<<" "<<t<<endl;
+      //cout <<X1[ij]<<"  "<<t<<endl;
+      P1 = R1XX+(s*u1);
+      P2 = R1YY+(s*u2);
+      P3 = R1ZZ+(s*u3);
+      Q1 = R4XX+(t*v1);
+      Q2 = R4YY+(t*v2);
+      Q3 = R4ZZ+(t*v3);
+      //" "<<P1<<" "<<P2<<" "<<P3<<" "<<Q1<<" "<<Q2<<" "<<Q3<<" "<<endl;
+      M1 = (P1+Q1)/2;
+      M2 = (P2+Q2)/2;
+      M3 = (P3+Q3)/2;
+      //-------------straight tracks only-----------------------------
+
+      
+
+      
+
+      //----scattering angle calculation--------------------------------------------
+      kxu = (R3ZZ-R1ZZ)/(R3XX-R1XX);
+      kyu = (R3ZZ-R1ZZ)/(R3YY-R1YY);
+      kxl = (R6ZZ-R4ZZ)/(R6XX-R4XX);
+      kyl = (R6ZZ-R4ZZ)/(R6YY-R4YY);
+      thetax = atan(abs((kxl-kxu)/(1+kxl*kxu)));
+      thetax1 = atan((kxl-kxu)/(1+kxl*kxu));
+      thetay = atan(abs((kyl-kyu)/(1+kyl*kyu)));
+      theta = sqrt(thetax*thetax+thetay*thetay)/2.0;
+      corr_theta = theta*(mom*mom/1000000);
+      
+
+      // known scatterer-----------------------------------------------------------
+      kxs = (R7ZZ-R6ZZ)/(R7XX-R6XX);
+      kyu = (R7ZZ-R6ZZ)/(R7YY-R6YY);
+      thetaxs = atan((kxs-kxl)/(1+kxs*kxl));
+      thetays = atan(abs((kys-kyl)/(1+kys*kyl)));
+      kTheta = sqrt(thetaxs*thetaxs+thetays*thetays)/2.0;
+     
+      h3-> Fill(mom/1000.0);
+      //      cout<<mom<<endl;
+
+      if (mom<3000.0)
+	{h1->Fill(thetax1*1000);
+	 //cout<<thetaxs<<endl;
+}
+
+      if (mom>3000.0)
+	{h2->Fill(thetax1*1000);}
+
+
+
+      
+      if (theta >= 0.005) 
+	{  h4-> Fill(mom/1000.0);
+	}
+      if (theta >= 0.01)
+	{h5-> Fill(mom/1000.0);}
+      //  if (evt >= 60000000) break;  //500000000
+     
+    }
+  in.close();
+  //  outfile.close();
+  
+    cout <<"---line no = "<<evt<<endl;
+    double scale = 1.0/(h2->Integral());
+    h1->Scale(scale);
+    h2->Scale(scale);
+
+    double scale1 = 1.0/(h3->Integral());
+    h3->Scale(scale1);
+    h4->Scale(scale1);
+    h5->Scale(scale1);
+    c1->cd();
+    h2->Draw();
+    h1->Draw("same");
+    c2->cd();
+    h3->Draw();
+    h4->Draw("same");
+    h5->Draw("same");
+
+    h1->SetLineColor(2);
+    h2->SetLineColor(6);
+    h3->SetLineColor(2);
+    h4->SetLineColor(6);
+    h5->SetLineColor(4);
+    
+    h1->SetLineWidth(2);
+    h2->SetLineWidth(2);
+    h3->SetLineWidth(2);
+    h4->SetLineWidth(2);
+    h5->SetLineWidth(2);
+
+    //   h2->SetTitle ("Scattering Angle, Concrete");
+   h2->GetXaxis()->SetTitle ("Scattering angle (mrad)");
+   h2->GetYaxis()->SetTitle ("Entries");
+   // h3->SetTitle ("Momentum Distribution");
+   h3->GetXaxis()->SetTitle ("Momentum (GeV)");
+   h3->GetYaxis()->SetTitle ("Entries");
+
+  // histo1->GetYaxis()->SetTitle ("y-axis (mm)");
+      
+     
+
+  // top_pad->cd();
+  // // projh2X->SetFillColor(kBlue+1);
+  // projh2X->Draw("bar");
+  // histo1->GetZaxis()->SetRangeUser(0.0, 700.0);
+  // histo->GetZaxis()->SetRangeUser(0.0, 700.0);
+      
+
+  // right_pad->cd();
+  // //projh2Y->SetFillColor(kBlue-2);
+  // projh2Y->Draw("bar");
+  // projh2Y->GetXaxis()->SetRangeUser(-150.0,150.0);
+  // c1->cd();
+  // TLatex *t = new TLatex();
+  // t->SetTextFont(42);
+  // t->SetTextSize(0.02);
+  // t->DrawLatex(0.6,0.88,"This example demonstrates how to display");
+  // t->DrawLatex(0.6,0.85,"a histogram and its two projections.");
+
+  //---------------------boxes------------------------------------------
+
+  //--------------boxes---------------------------------------
+  TBox *box3 = new TBox(-50,100,50,200);
+  box3->SetFillColorAlpha(0,1.0);
+  box3->SetFillStyle(1);
+  box3-> SetFillColor(19);
+  //  box3->Draw();
+  //--------------------------------------
+  TBox *box4 = new TBox(-50,100,50,200);
+  box4->SetFillColorAlpha(0,1.0);
+  box4->SetFillStyle(1);
+  box4->SetFillColor(19);
+  // box4->Draw();
+
+  //----------- text boxes------------------------------------
+
+      
+  TString a1,a2;
+  a1 = "Pb";
+      a2 = "Fe";
+      TLatex *l = new TLatex(0.2,0.7,a1.Data());
+      TLatex *l1 = new TLatex(0.4,0.6,a2.Data());
+      // l->Draw();
+      // l1->Draw();
+      //      c1->SaveAs("r2.pdf");
+      
+}
+
+
+

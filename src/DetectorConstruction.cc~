@@ -1,0 +1,404 @@
+//
+// ********************************************************************
+// * License and Disclaimer                                           *
+// *                                                                  *
+// * The  Geant4 software  is  copyright of the Copyright Holders  of *
+// * the Geant4 Collaboration.  It is provided  under  the terms  and *
+// * conditions of the Geant4 Software License,  included in the file *
+// * LICENSE and available at  http://cern.ch/geant4/license .  These *
+// * include a list of copyright holders.                             *
+// *                                                                  *
+// * Neither the authors of this software system, nor their employing *
+// * institutes,nor the agencies providing financial support for this *
+// * work  make  any representation or  warranty, express or implied, *
+// * regarding  this  software system or assume any liability for its *
+// * use.  Please see the license in the file  LICENSE  and URL above *
+// * for the full disclaimer and the limitation of liability.         *
+// *                                                                  *
+// * This  code  implementation is the result of  the  scientific and *
+// * technical work of the GEANT4 collaboration.                      *
+// * By using,  copying,  modifying or  distributing the software (or *
+// * any work based  on the software)  you  agree  to acknowledge its *
+// * use  in  resulting  scientific  publications,  and indicate your *
+// * acceptance of all terms of the Geant4 Software license.          *
+// ********************************************************************
+//
+// $Id$
+//
+/// \file DetectorConstruction.cc
+/// \brief Implementation of the DetectorConstruction class
+
+#include "DetectorConstruction.hh"
+
+#include "G4RunManager.hh"
+#include "G4NistManager.hh"
+#include "G4Box.hh"
+#include "G4Cons.hh"
+#include "G4Orb.hh"
+#include "G4Sphere.hh"
+#include "G4Trd.hh"
+#include "G4Tubs.hh"
+#include "G4LogicalVolume.hh"
+#include "G4PVPlacement.hh"
+#include "G4SystemOfUnits.hh"
+//#inlcude "G4SubtractionSolid.hh"
+#include "G4SubtractionSolid.hh"
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+DetectorConstruction::DetectorConstruction()
+  : G4VUserDetectorConstruction(),
+    fScoringVolume(0),fScoringVolume1(0)
+{ }
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+DetectorConstruction::~DetectorConstruction()
+ { }
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+G4VPhysicalVolume* DetectorConstruction::Construct()
+{
+
+  //******************* PARAMETERS AND MATERIALS*************************
+
+
+
+
+
+
+  //-------------------------------------------------------------------------
+  G4String symbol;             //a=mass of a mole;
+  G4double density;      //z=mean number of protons;  
+  // n=number of nucleons in an isotope;
+  
+  G4int ncomponents,natoms;
+  G4double fractionmass;
+  
+  // Get nist material manager
+  G4NistManager* nist = G4NistManager::Instance();
+  nist->SetVerbose(0);
+  // //rust mixture ---
+
+  G4Element* Fe = nist->FindOrBuildElement("Fe");
+  G4Element* H = nist->FindOrBuildElement("H");
+  G4Element* O = nist->FindOrBuildElement("O");
+  
+ 
+  // ScMaterial = mat->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE");
+  G4Material*  Steel =  nist->FindOrBuildMaterial("G4_STAINLESS-STEEL"); 
+
+
+
+  G4Material*Rust = new G4Material
+    ("Rust", density=4.0*g/cm3, ncomponents=3);
+  Rust->AddElement(H , 4);
+  Rust->AddElement(O , 5);
+  Rust->AddElement(Fe , 2);
+  
+  G4double  Det_sizeXY = 140.0 *cm;
+  G4double  Det_sizeZ = 0.2 *cm;
+  G4double cubesize = 7.0*cm;
+  G4Material* Iron = nist->FindOrBuildMaterial("G4_Fe");
+  G4Material* Concrete = nist->FindOrBuildMaterial("G4_CONCRETE");  
+  G4Material* shape2_mat = nist->FindOrBuildMaterial("G4_Ar");
+  G4Material* Lead = nist->FindOrBuildMaterial("G4_Pb"); 
+  G4Material* Aluminum   = nist->FindOrBuildMaterial("G4_Al"); 
+  double Th = 20.0;
+  
+  G4RotationMatrix* RotMat = new G4RotationMatrix();
+  RotMat->rotateZ(Th*deg);
+  G4RotationMatrix* RotMat1 = new G4RotationMatrix();
+  RotMat1->rotateZ(15.0*deg);
+  G4RotationMatrix* RotMat2 = new G4RotationMatrix();
+  RotMat2->rotateZ(Th/2.0*deg);
+
+
+  
+  // Envelope parameters
+  //
+  G4double env_sizeXY = 1.4*m, env_sizeZ = 1.4*m;
+  
+  // Option to switch on/off checking of volumes overlaps
+  //
+  G4bool checkOverlaps = true;
+
+  //     
+  // World
+  //
+  G4double world_sizeXY = 1.2*env_sizeXY;
+  G4double world_sizeZ  = 1.2*env_sizeZ;
+  G4Material* world_mat = nist->FindOrBuildMaterial("G4_AIR");
+  
+  G4Box* solidWorld =    
+    new G4Box("World",                       //its name
+	      0.5*world_sizeXY, 0.5*world_sizeXY, 0.5*world_sizeZ);     //its size
+      
+  G4LogicalVolume* logicWorld =                         
+    new G4LogicalVolume(solidWorld,          //its solid
+                        world_mat,           //its material
+                        "World");            //its name
+                                   
+  G4VPhysicalVolume* physWorld = 
+    new G4PVPlacement(0,                     //no rotation
+                      G4ThreeVector(),       //at (0,0,0)
+                      logicWorld,            //its logical volume
+                      "World",               //its name
+                      0,                     //its mother  volume
+                      false,                 //no boolean operation
+                      0,                     //copy number
+                      checkOverlaps);        //overlaps checking
+                     
+ 
+
+  //     
+  // Shape 2
+  //
+  
+   
+  G4Box* solidShape2 =    
+    new G4Box("Shape2",Det_sizeXY/2.0,Det_sizeXY/2.0,Det_sizeZ/2.0);
+                
+  G4LogicalVolume* logicShape2 =                         
+    new G4LogicalVolume(solidShape2,         //its solid
+                        shape2_mat,          //its material
+                        "Shape2");           //its name
+  for (int jk =0;jk<3;jk++){              
+    new G4PVPlacement(0,                       //no rotation
+		      G4ThreeVector(0.,0.,-25.0*cm-jk*7.0*cm),
+		      logicShape2,             //its logical volume
+		      "Shape2",                //its name
+		      logicWorld,                //its mother  volume
+		      false,                   //no boolean operation
+		      0,                       //copy number
+		      checkOverlaps);          //overlaps checking
+  }
+
+  //     
+  // Shape 3
+  //
+  
+   
+  G4Box* solidShape3 =    
+    new G4Box("Shape3",Det_sizeXY/2.0,Det_sizeXY/2.0,Det_sizeZ/2.0);
+                
+  G4LogicalVolume* logicShape3 =                         
+    new G4LogicalVolume(solidShape3,         //its solid
+                        shape2_mat,          //its material
+                        "Shape3");           //its name
+  for (int jk =0;jk<3;jk++){              
+    new G4PVPlacement(0,                       //no rotation
+		      G4ThreeVector(0.,0.,25.0*cm+jk*7.0*cm),
+		      logicShape3,             //its logical volume
+		      "Shape3",                //its name
+		      logicWorld,                //its mother  volume
+		      false,                   //no boolean operation
+		      0,                       //copy number
+		      checkOverlaps);          //overlaps checking
+  }
+
+
+
+
+  //---------------------slowing Layer--------------------------------------------------
+
+  
+  G4Box* solidShape4 =    
+    new G4Box("Shape4",Det_sizeXY*0.625,Det_sizeXY*0.625,2.5*cm);
+                
+  G4LogicalVolume* logicShape4 =                         
+    new G4LogicalVolume(solidShape4,         //its solid
+                        Iron,          //its material
+                        "Shape4");           //its name
+   
+    new G4PVPlacement(0,                       //no rotation
+		      G4ThreeVector(0.,0.,46.0*cm),                   //  G4ThreeVector(0.,0.,-15.1*cm+jk*7*cm),
+		      logicShape4,             //its logical volume
+		      "Shape4",                //its name
+		      logicWorld,                //its mother  volume
+		      false,                   //no boolean operation
+		      0,                       //copy number
+		      checkOverlaps);          //overlaps checking
+     
+
+
+  //---------------------momentum detector Layer--------------------------------------------------
+
+  
+  G4Box* solidShape5 =    
+    new G4Box("Shape5",Det_sizeXY*0.625,Det_sizeXY*0.625,Det_sizeZ/2.0);
+                
+  G4LogicalVolume* logicShape5 =                         
+    new G4LogicalVolume(solidShape5,         //its solid
+                        shape2_mat,          //its material
+                        "Shape5");           //its name
+              
+    new G4PVPlacement(0,                       //no rotation
+		      G4ThreeVector(0.,0.,50.0*cm),                   //  G4ThreeVector(0.,0.,-15.1*cm+jk*7*cm),
+		      logicShape5,             //its logical volume
+		      "Shape5",                //its name
+		      logicWorld,                //its mother  volume
+		      false,                   //no boolean operation
+		      0,                       //copy number
+		      checkOverlaps);          //overlaps checking
+     
+
+
+   //----------------------------------------------------------------------------------
+   //--------------------scatAngleFile---------------------------------------------
+
+ //------------base concete block---------------------------------------------
+   
+   double thickns = 6.0*cm;
+
+
+   G4VSolid* box = new G4Box("box",40.0*cm,40.0*cm,7.5*cm);
+   G4Box *box2 = new G4Box("boxx",cubesize/2.0,cubesize/2.0,thickns/2.0); // l: 1 cm
+
+
+
+   G4SubtractionSolid*RCCS0= new  G4SubtractionSolid ("RCCS0",box,box2,0,G4ThreeVector(9.5*cm,9.5*cm,0.0*cm) ); // 10,20,30,40,50,60,70
+   G4SubtractionSolid*RCCS1= new  G4SubtractionSolid ("RCCS1",RCCS0,box2,0,G4ThreeVector(-9.5*cm,9.5*cm,0.0*cm) ); // 20
+   G4SubtractionSolid*RCCS2= new  G4SubtractionSolid ("RCCS2",RCCS1,box2,0,G4ThreeVector(-9.5*cm,-9.5*cm,0.0*cm) ); //30
+   G4SubtractionSolid*RCCS3= new  G4SubtractionSolid ("RCCS3",RCCS2,box2,0,G4ThreeVector(9.5*cm,-9.5*cm,0.0*cm) ); //30
+
+ 
+
+   G4LogicalVolume* RCCLV
+     = new G4LogicalVolume(
+			   RCCS3,             // its solid
+			   Concrete,      // its material
+			   "RCCLV");         // its name
+                                   
+   new G4PVPlacement(
+		     0,                // no rotation
+		     G4ThreeVector(), // its position
+		     RCCLV,            // its logical volume                         
+		     "RCC",            // its name
+		     logicWorld,          // its mother  volume
+                 false,            // no boolean operation
+                 0,                // copy number
+                 0);  // checking overlaps
+
+
+
+
+   //--------------------- Air Cube---------------------------------------
+
+ G4VSolid* voidbox1 = new G4Box("voidbox1",cubesize/2.0,cubesize/2.0,thickns/2.0);
+ G4LogicalVolume* voidboxLV1
+    = new G4LogicalVolume(
+                 voidbox1,             // its solid
+                 world_mat,      // its material
+                 "voidboxLV1");         // its name
+
+  new G4PVPlacement(
+                 0,                // no rotation
+                 G4ThreeVector(9.5*cm,9.5*cm,0.0*cm), // its position
+                 voidboxLV1,            // its logical volume                         
+                 "voidbox1",            // its name
+                 logicWorld,          // its mother  volume
+                 false,            // no boolean operation
+                 0,                // copy number
+                 0);  // checking overlaps
+
+
+
+  //--------------------- Iron Cube---------------------------------------
+
+ G4VSolid* voidbox5 = new G4Box("voidbox5",cubesize/2.0,cubesize/2.0,thickns/2.0);
+ G4LogicalVolume* voidboxLV5
+    = new G4LogicalVolume(
+                 voidbox5,             // its solid
+                 Iron,      // its material
+                 "voidboxLV5");         // its name
+
+  new G4PVPlacement(
+                 0,                // no rotation
+                 G4ThreeVector(9.5*cm,-9.5*cm,0.0), // its position
+                 voidboxLV5,            // its logical volume                         
+                 "voidbox5",            // its name
+                 logicWorld,          // its mother  volume
+                 false,            // no boolean operation
+                 0,                // copy number
+                 0);  // checking overlaps
+
+
+  //--------------------- Aluminum Cube-----------------------------------
+   G4VSolid* voidbox7 = new G4Box("voidbox7",cubesize/2.0,cubesize/2.0,thickns/2.0);
+ G4LogicalVolume* voidboxLV7
+    = new G4LogicalVolume(
+                 voidbox7,             // its solid
+                Aluminum,      // its material
+                 "voidboxLV7");         // its name
+
+  new G4PVPlacement(
+                 0,                // no rotation
+                 G4ThreeVector(-9.5*cm,-9.5*cm,0.0), // its position
+                 voidboxLV7,            // its logical volume                         
+                 "voidbox7",            // its name
+                 logicWorld,          // its mother  volume
+                 false,            // no boolean operation
+                 0,                // copy number
+                 0);  // checking overlaps
+
+
+
+  //--------------------- Lead Cube---------------------------------------
+
+ G4VSolid* voidbox8 = new G4Box("voidbox8",cubesize/2.0,cubesize/2.0,thickns/2.0);
+ G4LogicalVolume* voidboxLV8
+    = new G4LogicalVolume(
+                 voidbox8,             // its solid
+                 Lead,      // its material
+                 "voidboxLV8");         // its name
+
+  new G4PVPlacement(
+                 0,                // no rotation
+                 G4ThreeVector(-9.5*cm,9.5*cm,0.0), // its position
+                 voidboxLV8,            // its logical volume                         
+                 "voidbox8",            // its name
+                 logicWorld,          // its mother  volume
+                 false,            // no boolean operation
+                 0,                // copy number
+                 0);  // checking overlaps
+
+
+
+
+  /*
+    //------------------- target material----------------------------    
+     
+   G4double Target_thkns = 10.0*cm;
+  G4Box* solidtarget =    
+    new G4Box("target",40.0*cm,40.0*cm,7.5*cm);
+                
+  G4LogicalVolume* logictarget =                         
+    new G4LogicalVolume(solidtarget,         //its solid
+                        Concrete,          //its material
+                        "target");           //its name
+                                   
+    new G4PVPlacement(0,                     //no rotation
+                      G4ThreeVector(),       //at (0,0,0)
+                      logictarget,            //its logical volume
+                      "target",
+		      logicWorld,               //its name
+                                           //its mother  volume
+                      false,                 //no boolean operation
+                      0,                     //copy number
+                      checkOverlaps);        //overlaps checking     
+  */  
+ 
+  
+  fScoringVolume = logicShape3;
+  fScoringVolume1 = logicShape2;
+  fScoringVolume2 = logicShape5;
+
+  //
+  //always return the physical World
+  //
+  return physWorld;
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
