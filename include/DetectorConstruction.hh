@@ -46,7 +46,7 @@ public:
   virtual ~DetectorConstruction();
 
   virtual G4VPhysicalVolume* Construct();
-    
+  void ConstructSDandField() override;    
   G4LogicalVolume* GetScoringVolume() const { return fScoringVolume; }
   G4LogicalVolume* GetScoringVolume1() const { return fScoringVolume1; }
   
