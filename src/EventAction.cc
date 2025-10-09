@@ -30,9 +30,14 @@
 
 #include "EventAction.hh"
 #include "RunAction.hh"
+#include "TrackerHit.hh"  
+#include "G4SDManager.hh"
+#include "G4HCofThisEvent.hh"
 #include <fstream>
 #include "G4Event.hh"
 #include "G4RunManager.hh"
+#include "G4SystemOfUnits.hh"
+
 using namespace std;
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -60,7 +65,8 @@ void EventAction::BeginOfEventAction(const G4Event*)
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 
-
+// old code for scoring and ASCII storing00000000000000000000
+/*
 void EventAction::EndOfEventAction(const G4Event*event)
 {
   out1.open("raw.txt",std::ios::out|std::ios::app);
@@ -73,5 +79,44 @@ void EventAction::EndOfEventAction(const G4Event*event)
   eventID=0;
   SetPosXR1=SetPosYR1=SetPosZR1=SetPosXR2=SetPosYR2=SetPosZR2=SetPosXR3=SetPosYR3=SetPosZR3=SetPosXR4=SetPosYR4=SetPosZR4=SetPosXR5=SetPosYR5=SetPosZR5=SetPosXR6=SetPosYR6=SetPosZR6=SetKE=0.0;
 }
-
+*/
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void EventAction::EndOfEventAction(const G4Event* event)
+{
+  auto hce = event->GetHCofThisEvent();
+  if (!hce) return;
+
+  auto sdManager = G4SDManager::GetSDMpointer();
+  auto analysisManager = G4AnalysisManager::Instance();
+
+  // Collect both hit collections
+  static G4int upperHCID = -1, lowerHCID = -1;
+  if (upperHCID < 0)
+    upperHCID = sdManager->GetCollectionID("UpperTrackerSD/UpperHitsCollection");
+  if (lowerHCID < 0)
+    lowerHCID = sdManager->GetCollectionID("LowerTrackerSD/LowerHitsCollection");
+
+  auto upperHC = (TrackerHitsCollection*)(hce->GetHC(upperHCID));
+  auto lowerHC = (TrackerHitsCollection*)(hce->GetHC(lowerHCID));
+  auto eventID = event->GetEventID();
+  // Fill ROOT ntuple with all hits
+  auto fillHits = [&](TrackerHitsCollection* hc) {
+    if (!hc) return;
+    for (size_t i = 0; i < hc->entries(); ++i)
+    {
+      auto hit = (*hc)[i];
+      analysisManager->FillNtupleIColumn(0, eventID);             // event ID
+      analysisManager->FillNtupleIColumn(1, hit->GetTrackID());
+      analysisManager->FillNtupleIColumn(2, hit->GetPlaneID());
+      analysisManager->FillNtupleDColumn(3, hit->GetPos().x()/mm);
+      analysisManager->FillNtupleDColumn(4, hit->GetPos().y()/mm);
+      analysisManager->FillNtupleDColumn(5, hit->GetPos().z()/mm);
+      analysisManager->FillNtupleDColumn(6, hit->GetTime()/ns);
+      analysisManager->FillNtupleDColumn(7, hit->GetEdep()/keV);
+      analysisManager->AddNtupleRow();
+    }
+  };
+
+  fillHits(upperHC);
+  fillHits(lowerHC);
+}
