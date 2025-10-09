@@ -201,6 +201,49 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
 
 
+  //---------------------slowing Layer--------------------------------------------------
+
+  
+  G4Box* solidShape4 =    
+    new G4Box("Shape4",Det_sizeXY*0.625,Det_sizeXY*0.625,2.5*cm);
+                
+  G4LogicalVolume* logicShape4 =                         
+    new G4LogicalVolume(solidShape4,         //its solid
+                        Iron,          //its material
+                        "Shape4");           //its name
+   
+    new G4PVPlacement(0,                       //no rotation
+		      G4ThreeVector(0.,0.,46.0*cm),                   //  G4ThreeVector(0.,0.,-15.1*cm+jk*7*cm),
+		      logicShape4,             //its logical volume
+		      "Shape4",                //its name
+		      logicWorld,                //its mother  volume
+		      false,                   //no boolean operation
+		      0,                       //copy number
+		      checkOverlaps);          //overlaps checking
+     
+
+
+  //---------------------momentum detector Layer--------------------------------------------------
+
+  
+  G4Box* solidShape5 =    
+    new G4Box("Shape5",Det_sizeXY*0.625,Det_sizeXY*0.625,Det_sizeZ/2.0);
+                
+  G4LogicalVolume* logicShape5 =                         
+    new G4LogicalVolume(solidShape5,         //its solid
+                        shape2_mat,          //its material
+                        "Shape5");           //its name
+              
+    new G4PVPlacement(0,                       //no rotation
+		      G4ThreeVector(0.,0.,50.0*cm),                   //  G4ThreeVector(0.,0.,-15.1*cm+jk*7*cm),
+		      logicShape5,             //its logical volume
+		      "Shape5",                //its name
+		      logicWorld,                //its mother  volume
+		      false,                   //no boolean operation
+		      0,                       //copy number
+		      checkOverlaps);          //overlaps checking
+     
+
 
    //----------------------------------------------------------------------------------
    //--------------------scatAngleFile---------------------------------------------
@@ -322,9 +365,35 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                  0);  // checking overlaps
 
 
+
+
+  /*
+    //------------------- target material----------------------------    
+     
+   G4double Target_thkns = 10.0*cm;
+  G4Box* solidtarget =    
+    new G4Box("target",40.0*cm,40.0*cm,7.5*cm);
+                
+  G4LogicalVolume* logictarget =                         
+    new G4LogicalVolume(solidtarget,         //its solid
+                        Concrete,          //its material
+                        "target");           //its name
+                                   
+    new G4PVPlacement(0,                     //no rotation
+                      G4ThreeVector(),       //at (0,0,0)
+                      logictarget,            //its logical volume
+                      "target",
+		      logicWorld,               //its name
+                                           //its mother  volume
+                      false,                 //no boolean operation
+                      0,                     //copy number
+                      checkOverlaps);        //overlaps checking     
+  */  
+ 
   
   fScoringVolume = logicShape3;
   fScoringVolume1 = logicShape2;
+  fScoringVolume2 = logicShape5;
 
 
   //

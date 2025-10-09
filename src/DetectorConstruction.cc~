@@ -99,7 +99,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   
   G4double  Det_sizeXY = 140.0 *cm;
   G4double  Det_sizeZ = 0.2 *cm;
-  G4double cubesize = 10.0*cm;
+  G4double cubesize = 7.0*cm;
   G4Material* Iron = nist->FindOrBuildMaterial("G4_Fe");
   G4Material* Concrete = nist->FindOrBuildMaterial("G4_CONCRETE");  
   G4Material* shape2_mat = nist->FindOrBuildMaterial("G4_Ar");
@@ -201,13 +201,56 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
 
 
+  //---------------------slowing Layer--------------------------------------------------
+
+  
+  G4Box* solidShape4 =    
+    new G4Box("Shape4",Det_sizeXY*0.625,Det_sizeXY*0.625,2.5*cm);
+                
+  G4LogicalVolume* logicShape4 =                         
+    new G4LogicalVolume(solidShape4,         //its solid
+                        Iron,          //its material
+                        "Shape4");           //its name
+   
+    new G4PVPlacement(0,                       //no rotation
+		      G4ThreeVector(0.,0.,46.0*cm),                   //  G4ThreeVector(0.,0.,-15.1*cm+jk*7*cm),
+		      logicShape4,             //its logical volume
+		      "Shape4",                //its name
+		      logicWorld,                //its mother  volume
+		      false,                   //no boolean operation
+		      0,                       //copy number
+		      checkOverlaps);          //overlaps checking
+     
+
+
+  //---------------------momentum detector Layer--------------------------------------------------
+
+  
+  G4Box* solidShape5 =    
+    new G4Box("Shape5",Det_sizeXY*0.625,Det_sizeXY*0.625,Det_sizeZ/2.0);
+                
+  G4LogicalVolume* logicShape5 =                         
+    new G4LogicalVolume(solidShape5,         //its solid
+                        shape2_mat,          //its material
+                        "Shape5");           //its name
+              
+    new G4PVPlacement(0,                       //no rotation
+		      G4ThreeVector(0.,0.,50.0*cm),                   //  G4ThreeVector(0.,0.,-15.1*cm+jk*7*cm),
+		      logicShape5,             //its logical volume
+		      "Shape5",                //its name
+		      logicWorld,                //its mother  volume
+		      false,                   //no boolean operation
+		      0,                       //copy number
+		      checkOverlaps);          //overlaps checking
+     
+
 
    //----------------------------------------------------------------------------------
    //--------------------scatAngleFile---------------------------------------------
 
  //------------base concete block---------------------------------------------
    
-   double thickns = 10.0*cm;
+   double thickns = 6.0*cm;
 
 
    G4VSolid* box = new G4Box("box",40.0*cm,40.0*cm,7.5*cm);
@@ -215,10 +258,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
 
 
-   G4SubtractionSolid*RCCS0= new  G4SubtractionSolid ("RCCS0",box,box2,0,G4ThreeVector(15.0*cm,15.0*cm,0.0*cm) ); // 10,20,30,40,50,60,70
-   G4SubtractionSolid*RCCS1= new  G4SubtractionSolid ("RCCS1",RCCS0,box2,0,G4ThreeVector(-15.0*cm,15.0*cm,0.0*cm) ); // 20
-   G4SubtractionSolid*RCCS2= new  G4SubtractionSolid ("RCCS2",RCCS1,box2,0,G4ThreeVector(-15.0*cm,-15.0*cm,0.0*cm) ); //30
-   G4SubtractionSolid*RCCS3= new  G4SubtractionSolid ("RCCS3",RCCS2,box2,0,G4ThreeVector(15.0*cm,-15.0*cm,0.0*cm) ); //30
+   G4SubtractionSolid*RCCS0= new  G4SubtractionSolid ("RCCS0",box,box2,0,G4ThreeVector(9.5*cm,9.5*cm,0.0*cm) ); // 10,20,30,40,50,60,70
+   G4SubtractionSolid*RCCS1= new  G4SubtractionSolid ("RCCS1",RCCS0,box2,0,G4ThreeVector(-9.5*cm,9.5*cm,0.0*cm) ); // 20
+   G4SubtractionSolid*RCCS2= new  G4SubtractionSolid ("RCCS2",RCCS1,box2,0,G4ThreeVector(-9.5*cm,-9.5*cm,0.0*cm) ); //30
+   G4SubtractionSolid*RCCS3= new  G4SubtractionSolid ("RCCS3",RCCS2,box2,0,G4ThreeVector(9.5*cm,-9.5*cm,0.0*cm) ); //30
 
  
 
@@ -252,7 +295,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   new G4PVPlacement(
                  0,                // no rotation
-                 G4ThreeVector(15.0*cm,15.0*cm,0.0*cm), // its position
+                 G4ThreeVector(9.5*cm,9.5*cm,0.0*cm), // its position
                  voidboxLV1,            // its logical volume                         
                  "voidbox1",            // its name
                  logicWorld,          // its mother  volume
@@ -273,7 +316,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   new G4PVPlacement(
                  0,                // no rotation
-                 G4ThreeVector(15.0*cm,-15.0*cm,0.0), // its position
+                 G4ThreeVector(9.5*cm,-9.5*cm,0.0), // its position
                  voidboxLV5,            // its logical volume                         
                  "voidbox5",            // its name
                  logicWorld,          // its mother  volume
@@ -292,7 +335,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   new G4PVPlacement(
                  0,                // no rotation
-                 G4ThreeVector(-15.0*cm,-15.0*cm,0.0), // its position
+                 G4ThreeVector(-9.5*cm,-9.5*cm,0.0), // its position
                  voidboxLV7,            // its logical volume                         
                  "voidbox7",            // its name
                  logicWorld,          // its mother  volume
@@ -313,7 +356,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   new G4PVPlacement(
                  0,                // no rotation
-                 G4ThreeVector(-15.0*cm,15.0*cm,0.0), // its position
+                 G4ThreeVector(-9.5*cm,9.5*cm,0.0), // its position
                  voidboxLV8,            // its logical volume                         
                  "voidbox8",            // its name
                  logicWorld,          // its mother  volume
@@ -322,10 +365,35 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                  0);  // checking overlaps
 
 
+
+
+  /*
+    //------------------- target material----------------------------    
+     
+   G4double Target_thkns = 10.0*cm;
+  G4Box* solidtarget =    
+    new G4Box("target",40.0*cm,40.0*cm,7.5*cm);
+                
+  G4LogicalVolume* logictarget =                         
+    new G4LogicalVolume(solidtarget,         //its solid
+                        Concrete,          //its material
+                        "target");           //its name
+                                   
+    new G4PVPlacement(0,                     //no rotation
+                      G4ThreeVector(),       //at (0,0,0)
+                      logictarget,            //its logical volume
+                      "target",
+		      logicWorld,               //its name
+                                           //its mother  volume
+                      false,                 //no boolean operation
+                      0,                     //copy number
+                      checkOverlaps);        //overlaps checking     
+  */  
+ 
   
   fScoringVolume = logicShape3;
   fScoringVolume1 = logicShape2;
-
+  fScoringVolume2 = logicShape5;
 
   //
   //always return the physical World
