@@ -25,74 +25,93 @@
 //
 // $Id$
 //
-/// \file RunAction.cc
-/// \brief Implementation of the RunAction class
+/// \file PrimaryGeneratorAction.cc
+/// \brief Implementation of the PrimaryGeneratorAction class
 
-#include "RunAction.hh"
 #include "PrimaryGeneratorAction.hh"
-#include "DetectorConstruction.hh"
-// #include "Run.hh"
 
-#include "G4RunManager.hh"
-#include "G4Run.hh"
-#include "G4AccumulableManager.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4LogicalVolume.hh"
-#include "G4UnitsTable.hh"
+#include "G4Box.hh"
+#include "G4RunManager.hh"
+#include "G4ParticleGun.hh"
+#include "G4ParticleTable.hh"
+#include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
-
+#include "Randomize.hh"
+#include "G4AutoLock.hh"
+using namespace std;
+namespace { G4Mutex PrimGenMutex = G4MUTEX_INITIALIZER; }
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-RunAction::RunAction()
-: G4UserRunAction()
-{ ;}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-RunAction::~RunAction()
-{}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-void RunAction::BeginOfRunAction(const G4Run*)
-{ 
-  // inform the runManager to save random number seed
-  G4RunManager::GetRunManager()->SetRandomNumberStore(false);
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-void RunAction::EndOfRunAction(const G4Run* run)
+PrimaryGeneratorAction::PrimaryGeneratorAction()
+: G4VUserPrimaryGeneratorAction(),
+  fParticleGun(0), 
+  fEnvelopeBox(0)
 {
-  G4int nofEvents = run->GetNumberOfEvent();
-  if (nofEvents == 0) return;
+
+  // G4AutoLock lock(&PrimGenMutex);
+  G4int n_particle = 1;
+  fParticleGun  = new G4ParticleGun(n_particle);
 
 
-  // const DetectorConstruction* detectorConstruction
-  //  = static_cast<const DetectorConstruction*>
-  //    (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
-  // G4double mass = detectorConstruction->GetScoringVolume()->GetMass();
-  // G4double dose = edep/mass;
-  // G4double rmsDose = rms/mass;
+  //input file
 
-        
-  // Print
-  //  
-  if (IsMaster()) {
-    G4cout
-     << G4endl
-     << "--------------------End of Global Run-----------------------";
-  }
-  else {
-    G4cout
-     << G4endl
-     << "--------------------End of Local Run------------------------";
-  }
+   infile.open ("/home/sridhar/CRY_27Aug_mu1e9.txt");
+
+  
+
  
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-// G4Run* RunAction::GenerateRun() {
-//     return new Run;
-// }
+PrimaryGeneratorAction::~PrimaryGeneratorAction()
+{
+  delete fParticleGun;
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
+{
+  //this function is called at the begining of ecah event
+  //
+
+  G4AutoLock lock(&PrimGenMutex);
+  G4int slno, PID;
+  G4double Px, Py, Pz, En, px, py, pz, xx,yy,zz;
+
+    infile >>PID>>En>>xx>>yy>>px>>py>>pz;
+
+  // default particle kinematic
+  G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
+  G4String particleName;
+  G4ParticleDefinition* particle
+    = particleTable->FindParticle(PID);
+  fParticleGun->SetParticleDefinition(particle);
+ 
+  // G4double EN = 2000*G4UniformRand(); 
+
+
+
+
+    
+    G4double x0 = 142.0 * (G4UniformRand()-0.5);
+    G4double y0 = 142.0 * (G4UniformRand()-0.5);
+    G4double z0 = -41.*cm;
+
+
+    //   G4ParticleDefinition* particleDefinition 
+     //   = G4ParticleTable::GetParticleTable()->FindParticle("13");    
+
+  
+
+   fParticleGun->SetParticlePosition(G4ThreeVector(x0*cm,y0*cm,z0));
+   fParticleGun->SetParticleEnergy(En*MeV);
+   fParticleGun->SetParticleMomentumDirection(G4ThreeVector(px,py,-pz));
+   fParticleGun->GeneratePrimaryVertex(anEvent);
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
