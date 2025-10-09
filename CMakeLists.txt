@@ -47,6 +47,7 @@ target_link_libraries(MT ${Geant4_LIBRARIES})
 set(MT_SCRIPTS
   init_vis.mac
   vis.mac
+  run1.mac
   )
 
 foreach(_script ${MT_SCRIPTS})

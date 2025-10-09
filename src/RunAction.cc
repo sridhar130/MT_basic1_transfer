@@ -69,8 +69,9 @@ RunAction::RunAction()
   analysisManager->SetNtupleMerging(true); // important for MT
   analysisManager->CreateNtuple("TrackerHits", "Hit data");
   analysisManager->CreateNtupleIColumn("eventID");
-  analysisManager->CreateNtupleIColumn("PlaneID");
   analysisManager->CreateNtupleIColumn("TrackID");
+  analysisManager->CreateNtupleIColumn("PlaneID");
+  analysisManager->CreateNtupleIColumn("DetID");
   analysisManager->CreateNtupleDColumn("x_mm");
   analysisManager->CreateNtupleDColumn("y_mm");
   analysisManager->CreateNtupleDColumn("z_mm");

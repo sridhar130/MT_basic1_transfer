@@ -172,7 +172,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 		      "UpperTracker",                //its name
 		      logicWorld,                //its mother  volume
 		      false,                   //no boolean operation
-		      0,                       //copy number
+		      jk,                       //copy number
 		      checkOverlaps);          //overlaps checking
   }
 
@@ -188,17 +188,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     new G4LogicalVolume(solidLowerTracker,         //its solid
                         shape2_mat,          //its material
                         "LowerTracker");           //its name
-  for (int jk =0;jk<3;jk++){              
+  for (int kj =0;kj<3;kj++){              
     new G4PVPlacement(0,                       //no rotation
-		      G4ThreeVector(0.,0.,25.0*cm+jk*7.0*cm),
+		      G4ThreeVector(0.,0.,25.0*cm+kj*7.0*cm),
 		      logicLowerTracker,             //its logical volume
 		      "LowerTracker",                //its name
 		      logicWorld,                //its mother  volume
 		      false,                   //no boolean operation
-		      0,                       //copy number
+		      kj,                       //copy number
 		      checkOverlaps);          //overlaps checking
   }
-
+  
 
 
 

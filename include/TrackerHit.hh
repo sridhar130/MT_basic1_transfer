@@ -22,6 +22,7 @@ class TrackerHit : public G4VHit
     inline void operator delete(void*);
 
     // --- Data members (add what you need) ---
+    G4int fDetID;          // Det Copy number
     G4int fTrackID;          // Track ID
     G4int fPlaneID;          // e.g. 0 = upper, 1 = lower (optional but useful)
     G4ThreeVector fPos;      // Hit position
@@ -29,12 +30,14 @@ class TrackerHit : public G4VHit
     G4double fEdep;          // Energy deposited
 
     // --- Accessors ---
+    void SetDetID(G4int id)          { fDetID = id; }
     void SetTrackID(G4int id)        { fTrackID = id; }
     void SetPlaneID(G4int id)        { fPlaneID = id; }
     void SetPos(G4ThreeVector pos)   { fPos = pos; }
     void SetTime(G4double t)         { fTime = t; }
     void SetEdep(G4double e)         { fEdep = e; }
 
+    G4int GetDetID() const           { return fDetID; }
     G4int GetTrackID() const         { return fTrackID; }
     G4int GetPlaneID() const         { return fPlaneID; }
     G4ThreeVector GetPos() const     { return fPos; }
