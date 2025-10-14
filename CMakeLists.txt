@@ -24,6 +24,12 @@ endif()
 include(${Geant4_USE_FILE})
 
 #----------------------------------------------------------------------------
+# --- CRY setup ---
+set(CRY_HOME "/home/sridhar/G4Dev/cry_v1.7")
+include_directories(${CRY_HOME}/src)
+link_directories(${CRY_HOME}/lib)
+
+#----------------------------------------------------------------------------
 # Locate sources and headers for this project
 #
 include_directories(${PROJECT_SOURCE_DIR}/include 
@@ -37,8 +43,7 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 # Add the executable, and link it to the Geant4 libraries
 #
 add_executable(MT MT.cc ${sources} ${headers})
-target_link_libraries(MT ${Geant4_LIBRARIES})
-
+target_link_libraries(MT ${Geant4_LIBRARIES} ${CRY_HOME}/lib/libCRY.a)
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
 # build B1. This is so that we can run the executable directly because it
