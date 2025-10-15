@@ -73,48 +73,97 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
   // 5. If CRY uses std::rand internally, set srand; otherwise use CRY-specific seed method
   srand(static_cast<unsigned>(seed_thread & 0xffffffff));
 
-  G4cout << "PrimaryGeneratorAction: CRY initialized (thread " << fThreadId
-         << ") seed=" << (seed_thread & 0xffffffff) << G4endl;
+  //  G4cout << "PrimaryGeneratorAction: CRY initialized (thread " << fThreadId
+  //     << ") seed=" << (seed_thread & 0xffffffff) << G4endl;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
-  // Use CRY to generate particles for this event:
+  void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
+  // choose detector half-size (match DetectorConstruction Det_sizeXY/2)
+  const G4double det_half_xy = 70.0*cm; // 140 cm / 2
   std::vector<CRYParticle*> parts;
   fCryGen->genEvent(&parts);   // CRY API: fills vector with pointers to CRYParticle
 
   for (auto p : parts) {
-    if (!p) continue;
+  if (!p) continue;
 
-    // Filter: only mu+ (PDG 13?) and mu- (PDG -13)
-    int pdg = p->id(); // adjust accessor name to CRYParticle API
-    if (pdg != 13 && pdg != -13) continue;
-
-    G4ParticleTable* ptable = G4ParticleTable::GetParticleTable();
-    G4ParticleDefinition* pdef = ptable->FindParticle((pdg == 13) ? "mu+" : "mu-");
-    if (!pdef) continue;
-
-    fParticleGun->SetParticleDefinition(pdef);
-
-    // set energy and direction: convert units (CRY gives energy in MeV often)
-    fParticleGun->SetParticleEnergy(p->ke() * MeV); // adapt accessor
-    fParticleGun->SetParticleMomentumDirection(G4ThreeVector(p->u(), p->v(), p->w()));
-    // muon generation position 
-    G4double x0 = 142.0 * (G4UniformRand()-0.5);
-    G4double y0 = 142.0 * (G4UniformRand()-0.5);
-    G4double z0 = -41.*cm;
-    fParticleGun->SetParticlePosition(G4ThreeVector(x0*cm,y0*cm,z0));
-    //fParticleGun->SetParticlePosition(G4ThreeVector(p->x() * m, p->y() * m, p->z() * m));
-    // time handling: CRY provides arrival time; set PrimaryVertex time if needed:
-    //G4double time = p->t() * ns; // change accessor/unit as CRY uses
-    //fParticleGun->SetParticleTime(time);
-
-    fParticleGun->GeneratePrimaryVertex(anEvent);
+  // CRY uses its own ID enums (not PDG). Accept CRY muons.
+  // Use CRYParticle::Muon (and optionally MuonMinus / MuonPlus if defined).
+  int cryid = p->id();
+  if (cryid != CRYParticle::Muon) {
+  delete p;
+  continue;
   }
 
-  // If CRY allocated particle pointers, free them if required by CRY API.
-}
+  // Energy: CRY ke() is in MeV -> convert to Geant4 units
+  G4double energy = p->ke() * MeV;
 
+  // Direction: CRY u,v,w are direction cosines.
+  // Determine direction and make sure it points into the detector.
+  G4ThreeVector dir(p->u(), p->v(), p->w());
+  // In many CRY setups w<0 means downward; for your geometry
+  // an incoming cosmic from "above" should go from negative z -> positive z,
+  // so flip sign if necessary to point towards +z (into your detectors).
+  if (dir.z() < 0) dir.setZ(-dir.z());   // flip if CRY uses negative-down convention
+  dir = dir.unit();
+
+  // Choose a generation Z that is above the upper tracker (tune as needed)
+  // Your detectors are around z = -25cm (upper) and +25cm (lower) so set generation
+  // plane at e.g. z = -150 cm (above upper in world coords) OR choose 1.0*m
+  G4double genZ = -150.0*cm;  // try -150cm (above upper tracker at -25cm)
+
+  // Choose X,Y uniformly inside detector acceptance so particles actually hit
+  G4double x = (G4UniformRand() - 0.5) * 2.0 * det_half_xy;
+  G4double y = (G4UniformRand() - 0.5) * 2.0 * det_half_xy;
+  G4ThreeVector pos(x, y, genZ);
+
+  // Determine particle name from CRY charge (or from cryid if CRY encodes plus/minus)
+  G4String pname;
+  if (p->charge() > 0.0) pname = "mu+";
+  else if (p->charge() < 0.0) pname = "mu-";
+  else pname = "mu-"; // fallback
+
+  // Debug print: CRY raw + chosen G4 pos/dir
+  // G4cout << "[PGA] CRY id=" << cryid
+  // << " E(MeV)=" << p->ke()
+  // << " CRYpos(m)=(" << p->x() << "," << p->y() << "," << p->z() << ")"
+  // << " -> G4 pos(cm)=(" << pos.x()/cm << "," << pos.y()/cm << "," << pos.z()/cm << ")"
+  // << " dir=(" << dir.x() << "," << dir.y() << "," << dir.z() << ")"
+  // << " charge=" << p->charge()
+  // << G4endl;
+
+  // Create G4 primary
+  G4ParticleTable* ptable = G4ParticleTable::GetParticleTable();
+  G4ParticleDefinition* pdef = ptable->FindParticle(pname);
+  if (!pdef) pdef = ptable->FindParticle("mu-"); // safe fallback
+
+  fParticleGun->SetParticleDefinition(pdef);
+  fParticleGun->SetParticleEnergy(energy);
+  fParticleGun->SetParticleMomentumDirection(dir);
+  fParticleGun->SetParticlePosition(pos);
+  fParticleGun->GeneratePrimaryVertex(anEvent);
+
+  // free CRY particle if its API expects user deletion
+  delete p;
+  }
+
+  }
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//Alternate--------------------------
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+/*
+void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
+
+  G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
+  fParticleGun->SetParticleDefinition(particleTable->FindParticle("mu-"));
+  //  fParticleGun->SetParticleDefinition(particle);
+  fParticleGun->SetParticleEnergy(3.0*GeV);
+  fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0,0,1));
+  fParticleGun->SetParticlePosition(G4ThreeVector(0,0,-150*cm));
+  fParticleGun->GeneratePrimaryVertex(anEvent);
+}
+*/
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 

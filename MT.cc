@@ -124,11 +124,14 @@ int main(int argc,char** argv)
 
   // Process macro or start UI session
   //
-  if ( ! ui ) { 
+  if (!ui) {
     // batch mode
+    if (macro.empty()) {
+      G4cerr << "Error: No macro file specified! Use -m <macro>." << G4endl;
+      return 1;
+    }
     G4String command = "/control/execute ";
-    G4String fileName = argv[1];
-    UImanager->ApplyCommand(command+fileName);
+    UImanager->ApplyCommand(command + macro);
   }
   else { 
     // interactive mode
