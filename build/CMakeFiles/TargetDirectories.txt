@@ -1,0 +1,8 @@
+/home/sridhar/G4Dev/MT_basic1_transfer/build/CMakeFiles/MT.dir
+/home/sridhar/G4Dev/MT_basic1_transfer/build/CMakeFiles/B1.dir
+/home/sridhar/G4Dev/MT_basic1_transfer/build/CMakeFiles/edit_cache.dir
+/home/sridhar/G4Dev/MT_basic1_transfer/build/CMakeFiles/rebuild_cache.dir
+/home/sridhar/G4Dev/MT_basic1_transfer/build/CMakeFiles/list_install_components.dir
+/home/sridhar/G4Dev/MT_basic1_transfer/build/CMakeFiles/install.dir
+/home/sridhar/G4Dev/MT_basic1_transfer/build/CMakeFiles/install/local.dir
+/home/sridhar/G4Dev/MT_basic1_transfer/build/CMakeFiles/install/strip.dir

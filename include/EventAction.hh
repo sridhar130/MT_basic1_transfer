@@ -1,33 +1,3 @@
-//
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
-//
-// $Id$
-//
-/// \file EventAction.hh
-/// \brief Definition of the EventAction class
-
 #ifndef EventAction_h
 #define EventAction_h 1
 #include "G4ThreeVector.hh"
@@ -42,40 +12,29 @@ using namespace std;
 
 class EventAction : public G4UserEventAction
 {
-  public:
-    EventAction(RunAction* runAction);
-    virtual ~EventAction();
+public:
+  EventAction(RunAction* runAction);
+  virtual ~EventAction();
 
-    virtual void BeginOfEventAction(const G4Event* event);
-    virtual void EndOfEventAction(const G4Event* event);
+  virtual void BeginOfEventAction(const G4Event* event);
+  virtual void EndOfEventAction(const G4Event* event);
 
-    void AddEdep(G4double edep) { fEdep += edep; }
-  // void SetPos(G4ThreeVector Position);
-  G4double SetPosXR1=0.0;
-  G4double SetPosYR1=0.0;
-  G4double SetPosZR1=0.0;
-  G4double SetPosXR2=0.0;
-  G4double SetPosYR2=0.0;
-  G4double SetPosZR2=0.0;
-  G4double SetPosXR3=0.0;
-  G4double SetPosYR3=0.0;
-  G4double SetPosZR3=0.0;
-  G4double SetPosXR4=0.0;
-  G4double SetPosYR4=0.0;
-  G4double SetPosZR4=0.0;
-  G4double SetPosXR5=0.0;
-  G4double SetPosYR5=0.0;
-  G4double SetPosZR5=0.0;
-  G4double SetPosXR6=0.0;
-  G4double SetPosYR6=0.0;
-  G4double SetPosZR6=0.0;
- 
-  vector<double> SetPosZ;
-  fstream out1;
-  G4double SetKE = 0.0;
-  private:
-    RunAction* fRunAction;
-    G4double     fEdep;
+  void AddEdep(G4double edep) { fEdep += edep; }
+  void SetUpperDetectorEntry(G4double keU, const G4ThreeVector& dirU, G4double timeU);
+  void SetLowerDetectorEntry(G4double keL, const G4ThreeVector& dirL, G4double timeL);
+  
+private:
+  RunAction* fRunAction;
+  G4double     fEdep;
+  G4double fKE_Upper;
+  G4double t_Upper;              
+  G4ThreeVector fDir_Upper;       
+  G4bool fUpperRecorded;          
+  G4double fKE_Lower;
+  G4double t_Lower;              
+  G4ThreeVector fDir_Lower;       
+  G4bool fLowerRecorded;
+  
 
 };
 

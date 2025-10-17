@@ -1,33 +1,3 @@
-//
-// ********************************************************************
-// * License and Disclaimer                                           *
-// *                                                                  *
-// * The  Geant4 software  is  copyright of the Copyright Holders  of *
-// * the Geant4 Collaboration.  It is provided  under  the terms  and *
-// * conditions of the Geant4 Software License,  included in the file *
-// * LICENSE and available at  http://cern.ch/geant4/license .  These *
-// * include a list of copyright holders.                             *
-// *                                                                  *
-// * Neither the authors of this software system, nor their employing *
-// * institutes,nor the agencies providing financial support for this *
-// * work  make  any representation or  warranty, express or implied, *
-// * regarding  this  software system or assume any liability for its *
-// * use.  Please see the license in the file  LICENSE  and URL above *
-// * for the full disclaimer and the limitation of liability.         *
-// *                                                                  *
-// * This  code  implementation is the result of  the  scientific and *
-// * technical work of the GEANT4 collaboration.                      *
-// * By using,  copying,  modifying or  distributing the software (or *
-// * any work based  on the software)  you  agree  to acknowledge its *
-// * use  in  resulting  scientific  publications,  and indicate your *
-// * acceptance of all terms of the Geant4 Software license.          *
-// ********************************************************************
-//
-// $Id$
-//
-/// \file RunAction.cc
-/// \brief Implementation of the RunAction class
-
 #include "RunAction.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "DetectorConstruction.hh"
@@ -43,30 +13,21 @@
 #include "G4HCofThisEvent.hh"
 #include "TrackerHit.hh"
 #include "G4AnalysisManager.hh"
+#include "G4AccumulableManager.hh"
+#include "G4Timer.hh"
+#include "G4ios.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 RunAction::RunAction()
-  : G4UserRunAction()
+  : G4UserRunAction(),
+    fEventCount(0),    // ✅ initialize accumulable
+    fTimer(new G4Timer)
 {
-  // auto man = G4AnalysisManager::Instance();
-  // man->SetVerboseLevel(1);
-  // man->SetNtupleMerging(true); // important for MT
-  // fNtupleId = man->CreateNtuple("Hits", "Hit per-event vectors");
-  // // scalar columns:
-  // man->CreateNtupleIColumn(fNtupleId, "eventID");
-  // man->CreateNtupleIColumn(fNtupleId, "nHits");
-  // // vector columns (bind to member vectors)
-  // man->CreateNtupleDColumn(fNtupleId, "hitTime", fHitTime);
-  // man->CreateNtupleDColumn(fNtupleId, "hitX", fHitX);
-  // man->CreateNtupleDColumn(fNtupleId, "hitY", fHitY);
-  // man->CreateNtupleDColumn(fNtupleId, "hitZ", fHitZ);
-  // man->CreateNtupleIColumn(fNtupleId, "hitTrackID", fHitTrackID);
-  // man->FinishNtuple();
 
+  G4AccumulableManager::Instance()->RegisterAccumulable(fEventCount);
   auto analysisManager = G4AnalysisManager::Instance();
   analysisManager->SetVerboseLevel(1);
-  analysisManager->SetNtupleMerging(true); // important for MT
+  analysisManager->SetNtupleMerging(true);
   analysisManager->CreateNtuple("TrackerHits", "Hit data");
   analysisManager->CreateNtupleIColumn("eventID");
   analysisManager->CreateNtupleIColumn("TrackID");
@@ -78,28 +39,52 @@ RunAction::RunAction()
   analysisManager->CreateNtupleDColumn("time_ns");
   analysisManager->CreateNtupleDColumn("edep_keV");
   analysisManager->FinishNtuple();
+  // mc info
+  analysisManager->CreateNtuple("mcinfo", "mc data");
+  analysisManager->CreateNtupleIColumn("eventID");
+  analysisManager->CreateNtupleIColumn("TrackID");
+  analysisManager->CreateNtupleDColumn("keu");
+  analysisManager->CreateNtupleDColumn("timeu");
+  analysisManager->CreateNtupleDColumn("upx");
+  analysisManager->CreateNtupleDColumn("upy");
+  analysisManager->CreateNtupleDColumn("upz");
+  analysisManager->CreateNtupleDColumn("kel");
+  analysisManager->CreateNtupleDColumn("timel");
+  analysisManager->CreateNtupleDColumn("lpx");
+  analysisManager->CreateNtupleDColumn("lpy");
+  analysisManager->CreateNtupleDColumn("lpz");
+  analysisManager->FinishNtuple();
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 RunAction::~RunAction()
-{}
+{
+  delete fTimer;
+}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void RunAction::BeginOfRunAction(const G4Run*)
-{ 
-  // inform the runManager to save random number seed
+{
+  fTimer->Start();
+  fEventCount = 0;   // reset the accumulable
   G4RunManager::GetRunManager()->SetRandomNumberStore(false);
   auto man = G4AnalysisManager::Instance();
-  man->OpenFile("hits.root");   // or set filename from ActionInitialization
+  man->OpenFile("hits.root");
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 void RunAction::EndOfRunAction(const G4Run* run)
 {
+  fTimer->Stop();
   G4int nofEvents = run->GetNumberOfEvent();
+  G4AccumulableManager::Instance()->Merge();
+  G4int totalAccepted = fEventCount.GetValue();
+  G4double det_size = 140.0; // cm verify from DetectorConstruction
+  G4double MuonExposure = nofEvents/(det_size*det_size*60); // in hrs
+  
   if (nofEvents == 0) return;
 
 
@@ -125,7 +110,14 @@ void RunAction::EndOfRunAction(const G4Run* run)
       << G4endl
       << "--------------------End of Local Run------------------------";
   }
- 
+  G4cout << "\n==================================================\n";
+  G4cout << " Run Summary:\n";
+  G4cout << "  Total events processed: " << nofEvents << G4endl;
+  G4cout << "  Useful muon tracks:     " << totalAccepted << G4endl;
+  G4cout << "  Exposure in hrs:        " << MuonExposure << G4endl;
+  G4cout << "### Run time: " << fTimer->GetRealElapsed() << " s (real), "
+         << fTimer->GetSystemElapsed() << " s (CPU)" << G4endl;
+  G4cout << "==================================================\n";
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
