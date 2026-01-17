@@ -1,6 +1,4 @@
-// At least 6 hits does not matter which particle and no uppper limit..
-// time window 50 ns
-// First detector must have only 1 hit
+// A loose stratergy to  have at least 6 hits does not matter which particle and no uppper limit..
 #include "EventAction.hh"
 #include "RunAction.hh"
 #include "TrackerHit.hh"  
@@ -158,31 +156,14 @@ void EventAction::EndOfEventAction(const G4Event* event)
     // Primary times not in coincidence window
     return;
   }
+  // G4int nHitsUpper = (upperHC ? upperHC->entries() : 0);
+  // G4int nHitsLower = (lowerHC ? lowerHC->entries() : 0);
+  // //  G4int nHitsTotal = nHitsUpper + nHitsLower;
 
-  // ---------------------------------------------------------------------------
-  // NEW CUT: require "only first detector hit"
-  // Here: exactly ONE hit in PlaneID=0, DetID=2 within [t0, tmax].
-  // ---------------------------------------------------------------------------
-  int nFirstDetHits = 0;
-  if (upperHC) {
-    for (size_t i = 0; i < upperHC->entries(); ++i) {
-      auto hit = (*upperHC)[i];
-      if (!hit) continue;
-      G4double t = hit->GetTime();
-      if (t < t0 || t > tmax) continue;
+  // if (nHitsUpper != 3 || nHitsLower != 3)
+  //   return;
 
-      // First detector definition: upper plane, DetID = 2
-      if (hit->GetPlaneID() == 0 && hit->GetDetID() == 2) {
-        ++nFirstDetHits;
-      }
-    }
-  }
-
-  // Keep only events with exactly one such hit
-  if (nFirstDetHits != 1) {
-    return;
-  }
-
+  
   // ---------------------------------------------------------------------------
   // Event fully accepted at this point:
   //  * increment useful event counter
@@ -192,7 +173,7 @@ void EventAction::EndOfEventAction(const G4Event* event)
   fRunAction->CountEvents();
   auto eventID = event->GetEventID();
 
-  // --- 1) Fill TrackerHits ntuple for ALL hits ---
+  // --- 1) Fill TrackerHits ntuple for ALL hits (as before) ---
   auto fillHits = [&](TrackerHitsCollection* hc) {
     if (!hc) return;
     for (size_t i = 0; i < hc->entries(); ++i) {
@@ -217,8 +198,10 @@ void EventAction::EndOfEventAction(const G4Event* event)
   fillHits(lowerHC);
 
   // --- 2) Fill ONE mcinfo row per accepted event ---
+  // Use TrackID = 1 explicitly (primary muon),
+  // or change if you later want something more sophisticated.
   analysisManager->FillNtupleIColumn(1, 0, eventID);
-  analysisManager->FillNtupleIColumn(1, 1, 1);                  // primary track (logical label)
+  analysisManager->FillNtupleIColumn(1, 1, 1);                  // primary track
   analysisManager->FillNtupleDColumn(1, 2, fKE_Upper / MeV);
   analysisManager->FillNtupleDColumn(1, 3, t_Upper / ns);
   analysisManager->FillNtupleDColumn(1, 4, fDir_Upper.x());

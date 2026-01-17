@@ -1,7 +1,12 @@
 # Macro file for the visualization setting in the initialization phase 
 # of the B1 example when running in interactive mode
 #
-
+# Initialize kernel (do it in only one working macro)
+/run/initialize
+/control/verbose 2
+/tracking/verbose 1
+/control/saveHistory
+/run/verbose 2
 # Use these open statements to open selected visualization
 #
 # Use this open statement to create an OpenGL view:

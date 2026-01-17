@@ -33,6 +33,9 @@ G4bool TrackerSD::ProcessHits(G4Step* step, G4TouchableHistory*)
   auto hit = new TrackerHit();
   hit->SetDetID(copyNo);
   hit->SetTrackID(step->GetTrack()->GetTrackID());
+  hit->SetParentID(step->GetTrack()->GetParentID());
+  hit->SetKE(step->GetTrack()->GetDynamicParticle()->GetKineticEnergy());
+  hit->SetPDGCode(step->GetTrack()->GetDefinition()->GetPDGEncoding());
   hit->SetPlaneID(fPlaneID);
   hit->SetPos(step->GetPreStepPoint()->GetPosition());
   hit->SetTime(step->GetPreStepPoint()->GetGlobalTime());

@@ -1,3 +1,9 @@
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+// This file is for the volume:
+// Large Concrete Block: 80*80*15 cm3
+// 4 blocks of: 10*10*10 cm3 submergerd into it.
+// Lead, Air, Iron, Aluminum
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 #include "DetectorConstruction.hh"
 #include "G4RunManager.hh"
 #include "G4NistManager.hh"

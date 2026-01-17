@@ -1,6 +1,3 @@
-// At least 6 hits does not matter which particle and no uppper limit..
-// time window 50 ns
-// First detector must have only 1 hit
 #include "EventAction.hh"
 #include "RunAction.hh"
 #include "TrackerHit.hh"  
@@ -79,7 +76,7 @@ void EventAction::EndOfEventAction(const G4Event* event)
   auto hce = event->GetHCofThisEvent();
   if (!hce) return;
 
-  auto sdManager       = G4SDManager::GetSDMpointer();
+  auto sdManager = G4SDManager::GetSDMpointer();
   auto analysisManager = G4AnalysisManager::Instance();
 
   // Collect both hit collections
@@ -91,12 +88,11 @@ void EventAction::EndOfEventAction(const G4Event* event)
 
   auto upperHC = (TrackerHitsCollection*)(hce->GetHC(upperHCID));
   auto lowerHC = (TrackerHitsCollection*)(hce->GetHC(lowerHCID));
-
+  // If no hits at all -> discard quickly
   // Quick reject if no upper hits at all (no trigger)
   if (!upperHC || upperHC->entries() == 0) {
     return;
   }
-
   //------------------------------------------------------------------------------------
   // --- find the earliest upper hit time (t0) ---
   // --- Event Level Trigger and dump mechanism-----
@@ -110,7 +106,7 @@ void EventAction::EndOfEventAction(const G4Event* event)
   if (t0 == DBL_MAX) return; // just in case
 
   const G4double window = 50.0 * ns;
-  const G4double tmax   = t0 + window;
+  const G4double tmax = t0 + window;
 
   // --- collect distinct detector copy numbers within the window ---
   std::unordered_set<int> upperCopiesInWindow;
@@ -135,99 +131,72 @@ void EventAction::EndOfEventAction(const G4Event* event)
   // --- Decide acceptance: need >=3 distinct upper and >=3 distinct lower planes ---
   const size_t needUpper = 3;
   const size_t needLower = 3;
-  bool acceptCoincidence =
-    (upperCopiesInWindow.size() >= needUpper) &&
-    (lowerCopiesInWindow.size() >= needLower);
-
-  if (!acceptCoincidence) {
-    // event rejected by multiplicity/coincidence -> do not write ntuple rows
+  bool accept = (upperCopiesInWindow.size() >= needUpper) && (lowerCopiesInWindow.size() >= needLower);
+  /*
+  // Debug: list DetIDs that fired in coincidence window
+  G4cout << "Upper DetIDs: ";
+  for (auto d : upperCopiesInWindow) G4cout << d << " ";
+  G4cout << " | Lower DetIDs: ";
+  for (auto d : lowerCopiesInWindow) G4cout << d << " ";
+  G4cout << G4endl;
+  // Debug prints for first few events (reduce verbosity)
+  static G4int dbg_count = 0;
+  if (dbg_count < 20) {
+  G4cout << "Event " << event->GetEventID()
+  << " t0(ns)=" << t0 / ns
+  << " tmax(ns)=" << tmax / ns
+  << " upper_hits=" << (upperHC?upperHC->entries():0)
+  << " lower_hits=" << (lowerHC?lowerHC->entries():0)
+  << " upperDistinctInWindow=" << upperCopiesInWindow.size()
+  << " lowerDistinctInWindow=" << lowerCopiesInWindow.size()
+  << " => accept=" << accept << G4endl;
+  ++dbg_count;
+  }
+  */
+  if (!accept) {
+    // event rejected => do not write ntuple rows
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // Additional requirements for MC row:
-  //  * primary muon must have recorded entries in BOTH detectors
-  //  * upper-lower primary times within same 50 ns window
-  // ---------------------------------------------------------------------------
-  if (!(fUpperRecorded && fLowerRecorded)) {
-    // We had hits in both trackers, but not from the primary in both
-    return;
-  }
+  // --- Passed coincidence: write hits to ntuple (as before) ---
+  //------------------------------------------------------------------------------------
 
-  if (std::fabs(t_Lower - t_Upper) > window) {
-    // Primary times not in coincidence window
-    return;
-  }
-
-  // ---------------------------------------------------------------------------
-  // NEW CUT: require "only first detector hit"
-  // Here: exactly ONE hit in PlaneID=0, DetID=2 within [t0, tmax].
-  // ---------------------------------------------------------------------------
-  int nFirstDetHits = 0;
-  if (upperHC) {
-    for (size_t i = 0; i < upperHC->entries(); ++i) {
-      auto hit = (*upperHC)[i];
-      if (!hit) continue;
-      G4double t = hit->GetTime();
-      if (t < t0 || t > tmax) continue;
-
-      // First detector definition: upper plane, DetID = 2
-      if (hit->GetPlaneID() == 0 && hit->GetDetID() == 2) {
-        ++nFirstDetHits;
-      }
-    }
-  }
-
-  // Keep only events with exactly one such hit
-  if (nFirstDetHits != 1) {
-    return;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Event fully accepted at this point:
-  //  * increment useful event counter
-  //  * fill hit ntuple for all hits
-  //  * fill ONE mcinfo row per event
-  // ---------------------------------------------------------------------------
-  fRunAction->CountEvents();
+  fRunAction->  CountEvents();
   auto eventID = event->GetEventID();
-
-  // --- 1) Fill TrackerHits ntuple for ALL hits ---
+  // Fill ROOT ntuple with all hits
   auto fillHits = [&](TrackerHitsCollection* hc) {
     if (!hc) return;
-    for (size_t i = 0; i < hc->entries(); ++i) {
-      auto hit = (*hc)[i];
-      analysisManager->FillNtupleIColumn(0, 0, eventID);             // event ID
-      analysisManager->FillNtupleIColumn(0, 1, hit->GetTrackID());
-      analysisManager->FillNtupleIColumn(0, 2, hit->GetParentID());
-      analysisManager->FillNtupleIColumn(0, 3, hit->GetPDGCode());
-      analysisManager->FillNtupleIColumn(0, 4, hit->GetPlaneID());
-      analysisManager->FillNtupleIColumn(0, 5, hit->GetDetID());     // copy number
-      analysisManager->FillNtupleDColumn(0, 6, hit->GetPos().x()/mm);
-      analysisManager->FillNtupleDColumn(0, 7, hit->GetPos().y()/mm);
-      analysisManager->FillNtupleDColumn(0, 8, hit->GetPos().z()/mm);
-      analysisManager->FillNtupleDColumn(0, 9, hit->GetTime()/ns);
-      analysisManager->FillNtupleDColumn(0, 10, hit->GetEdep()/keV);
-      analysisManager->FillNtupleDColumn(0, 11, hit->GetKE()/MeV);
-      analysisManager->AddNtupleRow(0);
-    }
+    for (size_t i = 0; i < hc->entries(); ++i)
+      {
+	auto hit = (*hc)[i];
+	analysisManager->FillNtupleIColumn(0, 0, eventID);             // event ID
+	analysisManager->FillNtupleIColumn(0, 1, hit->GetTrackID());
+	analysisManager->FillNtupleIColumn(0, 2, hit->GetPlaneID());
+	analysisManager->FillNtupleIColumn(0, 3, hit->GetDetID());     // copy number
+	analysisManager->FillNtupleDColumn(0, 4, hit->GetPos().x()/mm);
+	analysisManager->FillNtupleDColumn(0, 5, hit->GetPos().y()/mm);
+	analysisManager->FillNtupleDColumn(0, 6, hit->GetPos().z()/mm);
+	analysisManager->FillNtupleDColumn(0, 7, hit->GetTime()/ns);
+	analysisManager->FillNtupleDColumn(0, 8, hit->GetEdep()/keV);
+	analysisManager->AddNtupleRow(0);
+	//mc info
+	analysisManager->FillNtupleIColumn(1, 0, eventID);
+	analysisManager->FillNtupleIColumn(1, 1, hit->GetTrackID());
+	analysisManager->FillNtupleDColumn(1, 2, fKE_Upper / MeV);
+        analysisManager->FillNtupleDColumn(1, 3, t_Upper /ns);
+	analysisManager->FillNtupleDColumn(1, 4, fDir_Upper.x());
+	analysisManager->FillNtupleDColumn(1, 5, fDir_Upper.y());
+	analysisManager->FillNtupleDColumn(1, 6, fDir_Upper.z());
+	analysisManager->FillNtupleDColumn(1, 7, fKE_Lower / MeV);
+        analysisManager->FillNtupleDColumn(1, 8, t_Lower /ns);
+	analysisManager->FillNtupleDColumn(1, 9, fDir_Lower.x());
+	analysisManager->FillNtupleDColumn(1, 10, fDir_Lower.y());
+	analysisManager->FillNtupleDColumn(1, 11, fDir_Lower.z());
+	analysisManager->AddNtupleRow(1);
+	
+      }
   };
 
   fillHits(upperHC);
   fillHits(lowerHC);
-
-  // --- 2) Fill ONE mcinfo row per accepted event ---
-  analysisManager->FillNtupleIColumn(1, 0, eventID);
-  analysisManager->FillNtupleIColumn(1, 1, 1);                  // primary track (logical label)
-  analysisManager->FillNtupleDColumn(1, 2, fKE_Upper / MeV);
-  analysisManager->FillNtupleDColumn(1, 3, t_Upper / ns);
-  analysisManager->FillNtupleDColumn(1, 4, fDir_Upper.x());
-  analysisManager->FillNtupleDColumn(1, 5, fDir_Upper.y());
-  analysisManager->FillNtupleDColumn(1, 6, fDir_Upper.z());
-  analysisManager->FillNtupleDColumn(1, 7, fKE_Lower / MeV);
-  analysisManager->FillNtupleDColumn(1, 8, t_Lower / ns);
-  analysisManager->FillNtupleDColumn(1, 9, fDir_Lower.x());
-  analysisManager->FillNtupleDColumn(1, 10, fDir_Lower.y());
-  analysisManager->FillNtupleDColumn(1, 11, fDir_Lower.z());
-  analysisManager->AddNtupleRow(1);
 }

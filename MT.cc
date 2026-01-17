@@ -30,7 +30,7 @@ int main(int argc,char** argv)
   G4bool verboseBestUnits = false; //true - to reduce outputs
   G4int nEvents = 0;
   G4String outputFile = "hits.root"; // Check - if here or in ActionInitialization
-  G4int masterSeed = 12345;            // default
+  G4int masterSeed = 21345;            // default
   long long eventOffset = 0;           // default
 
   // -------------------------------------------------------------------------
