@@ -1,6 +1,8 @@
-// At least 6 hits does not matter which particle and no uppper limit..
+//EventAction_tight.cc
+//--------------------very tight cut--------------
 // time window 50 ns
-// First detector must have only 1 hit
+// upper and lower exactly have 3 hits
+// ----------------------------------------------
 #include "EventAction.hh"
 #include "RunAction.hh"
 #include "TrackerHit.hh"  
@@ -146,7 +148,7 @@ void EventAction::EndOfEventAction(const G4Event* event)
 
   // ---------------------------------------------------------------------------
   // Additional requirements for MC row:
-  //  * primary muon must have recorded entries in BOTH detectors
+
   //  * upper-lower primary times within same 50 ns window
   // ---------------------------------------------------------------------------
   if (!(fUpperRecorded && fLowerRecorded)) {
@@ -158,31 +160,14 @@ void EventAction::EndOfEventAction(const G4Event* event)
     // Primary times not in coincidence window
     return;
   }
+  G4int nHitsUpper = (upperHC ? upperHC->entries() : 0);
+  G4int nHitsLower = (lowerHC ? lowerHC->entries() : 0);
+  //  G4int nHitsTotal = nHitsUpper + nHitsLower;
 
-  // ---------------------------------------------------------------------------
-  // NEW CUT: require "only first detector hit"
-  // Here: exactly ONE hit in PlaneID=0, DetID=2 within [t0, tmax].
-  // ---------------------------------------------------------------------------
-  int nFirstDetHits = 0;
-  if (upperHC) {
-    for (size_t i = 0; i < upperHC->entries(); ++i) {
-      auto hit = (*upperHC)[i];
-      if (!hit) continue;
-      G4double t = hit->GetTime();
-      if (t < t0 || t > tmax) continue;
-
-      // First detector definition: upper plane, DetID = 2
-      if (hit->GetPlaneID() == 0 && hit->GetDetID() == 2) {
-        ++nFirstDetHits;
-      }
-    }
-  }
-
-  // Keep only events with exactly one such hit
-  if (nFirstDetHits != 1) {
+  if (nHitsUpper != 3 || nHitsLower != 3)
     return;
-  }
 
+  
   // ---------------------------------------------------------------------------
   // Event fully accepted at this point:
   //  * increment useful event counter
@@ -192,7 +177,7 @@ void EventAction::EndOfEventAction(const G4Event* event)
   fRunAction->CountEvents();
   auto eventID = event->GetEventID();
 
-  // --- 1) Fill TrackerHits ntuple for ALL hits ---
+// --- 1) Fill TrackerHits ntuple for ALL hits ---
   auto fillHits = [&](TrackerHitsCollection* hc) {
     if (!hc) return;
     for (size_t i = 0; i < hc->entries(); ++i) {

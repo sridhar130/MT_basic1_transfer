@@ -8,13 +8,13 @@
 /process/had/verbose 0
 /process/verbose 0
 # Change the default number of threads (in multi-threaded mode)
-/run/numberOfThreads 6
+#/run/numberOfThreads 12
 #
 # Initialize kernel
 /run/initialize
 #
 # Visualization setting
 #/control/execute vis.mac
-/random/setSeeds 6589533 21755
-/run/beamOn 100000 #100000
+/random/setSeeds 1576098 21456
+/run/beamOn 10000000 #100000
 #/process/list

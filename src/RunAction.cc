@@ -85,7 +85,7 @@ void RunAction::EndOfRunAction(const G4Run* run)
   G4int nofEvents = run->GetNumberOfEvent();
   G4AccumulableManager::Instance()->Merge();
   G4int totalAccepted = fEventCount.GetValue();
-  G4double det_size = 140.0; // cm verify from DetectorConstruction
+  G4double det_size = 600.0; // cm verify from DetectorConstruction
   G4double MuonExposure = nofEvents/(det_size*det_size*60); // in hrs
   
   if (nofEvents == 0) return;

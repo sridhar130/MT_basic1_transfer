@@ -15,7 +15,7 @@
 #include "CLHEP/Random/Random.h"
 #include <random>
 #include "CRYData.h"
-#include "CRYSetup.h"      // adapt include names to your CRY installation
+#include "CRYSetup.h"
 #include "CRYGenerator.h"
 #include "CRYParticle.h"
 
@@ -49,7 +49,7 @@ PrimaryGeneratorAction::~PrimaryGeneratorAction() = default;
 void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset)
 {
   // 1. Load CRY configuration file
-  std::ifstream inputFile("/home/sridhar/G4Dev/cry_v1.7/configGaisser_short.txt");
+  std::ifstream inputFile("/home/sinjini/STProducts/G4Dev/cry_v1.7/configGaisser_short.txt");
   if (!inputFile.is_open()) {
     G4Exception("PrimaryGeneratorAction::InitializeCRY",
                 "CRYConfig", FatalException, "Cannot open CRY config file");
@@ -58,7 +58,7 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
                           std::istreambuf_iterator<char>());
 
   // 2. Initialize CRY setup (pass data directory as string)
-  std::string cryDataDir = "/home/sridhar/G4Dev/cry_v1.7/data";
+  std::string cryDataDir = "/home/sinjini/STProducts/G4Dev/cry_v1.7/data";
   fCrySetup = std::make_unique<CRYSetup>(setupString, cryDataDir);
 
   // 3. Create generator (constructor signature depends on CRY version)
@@ -81,7 +81,9 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
 
   void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
   // choose detector half-size (match DetectorConstruction Det_sizeXY/2)
-  const G4double det_half_xy = 70.0*cm; // 140 cm / 2
+  const G4double det_half_xy = 600.0*cm; // 140 cm / 2
+  const G4double outliers = 20.0*cm;
+  const G4double genXY  = outliers + det_half_xy;
   std::vector<CRYParticle*> parts;
   fCryGen->genEvent(&parts);   // CRY API: fills vector with pointers to CRYParticle
 
@@ -102,20 +104,21 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
   // Direction: CRY u,v,w are direction cosines.
   // Determine direction and make sure it points into the detector.
   G4ThreeVector dir(p->u(), p->v(), p->w());
-  // In many CRY setups w<0 means downward; for your geometry
-  // an incoming cosmic from "above" should go from negative z -> positive z,
+  //G4ThreeVector dir(p->u(), p->v(), std::abs(p->w()));
+  // CRY setups w<0 means downward; 
+  // 
   // so flip sign if necessary to point towards +z (into your detectors).
-  if (dir.z() < 0) dir.setZ(-dir.z());   // flip if CRY uses negative-down convention
+  // This is not a perfect Transformation but not wrong either 
   dir = dir.unit();
 
-  // Choose a generation Z that is above the upper tracker (tune as needed)
-  // Your detectors are around z = -25cm (upper) and +25cm (lower) so set generation
-  // plane at e.g. z = -150 cm (above upper in world coords) OR choose 1.0*m
-  G4double genZ = -150.0*cm;  // try -150cm (above upper tracker at -25cm)
+  // The generation Z is above the upper tracker 
+  // Detectors are around z = -25cm (upper) and +25cm (lower) 
+  // Gen plane above upper z: -50 cm;
+  G4double genZ = 430.0*cm;  //  upper detector starts at 400 cm
 
   // Choose X,Y uniformly inside detector acceptance so particles actually hit
-  G4double x = (G4UniformRand() - 0.5) * 2.0 * det_half_xy;
-  G4double y = (G4UniformRand() - 0.5) * 2.0 * det_half_xy;
+  G4double x = (G4UniformRand() - 0.5) * 2.0 * genXY;
+  G4double y = (G4UniformRand() - 0.5) * 2.0 * genXY;
   G4ThreeVector pos(x, y, genZ);
 
   // Determine particle name from CRY charge (or from cryid if CRY encodes plus/minus)
@@ -141,6 +144,7 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
   fParticleGun->SetParticleDefinition(pdef);
   fParticleGun->SetParticleEnergy(energy);
   fParticleGun->SetParticleMomentumDirection(dir);
+  //fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0,0,1));
   fParticleGun->SetParticlePosition(pos);
   fParticleGun->GeneratePrimaryVertex(anEvent);
 
@@ -151,7 +155,8 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
   }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-//Alternate--------------------------
+// Alternate--------------------------
+// Test Straight vertical tracks ----
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 /*
 void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {

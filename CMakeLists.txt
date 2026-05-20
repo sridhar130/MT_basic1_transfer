@@ -25,7 +25,7 @@ include(${Geant4_USE_FILE})
 
 #----------------------------------------------------------------------------
 # --- CRY setup ---
-set(CRY_HOME "/home/sridhar/G4Dev/cry_v1.7")
+set(CRY_HOME "/home/sinjini/STProducts/G4Dev/cry_v1.7")
 include_directories(${CRY_HOME}/src)
 link_directories(${CRY_HOME}/lib)
 
@@ -53,6 +53,7 @@ set(MT_SCRIPTS
   init_vis.mac
   vis.mac
   run1.mac
+  vis_hi_storm.mac
   )
 
 foreach(_script ${MT_SCRIPTS})

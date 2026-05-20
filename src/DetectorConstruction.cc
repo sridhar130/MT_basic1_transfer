@@ -1,8 +1,8 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 // This file is for the volume:
-// Large Concrete Block: 80*80*15 cm3
-// 4 blocks of: 10*10*10 cm3 submergerd into it.
-// Lead, Air, Iron, Aluminum
+// HI-STORM-like CASK GEOMETRY
+// Placed at center
+// Vary Uranium rod thickness
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 #include "DetectorConstruction.hh"
 #include "G4RunManager.hh"
@@ -40,11 +40,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   //******************* PARAMETERS AND MATERIALS*************************
 
-
-
-
-
-
   //-------------------------------------------------------------------------
   G4String symbol;             //a=mass of a mole;
   G4double density;      //z=mean number of protons;  
@@ -64,7 +59,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   
  
   // ScMaterial = mat->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE");
-  G4Material*  Steel =  nist->FindOrBuildMaterial("G4_STAINLESS-STEEL"); 
+  G4Material*  steel =  nist->FindOrBuildMaterial("G4_STAINLESS-STEEL"); 
 
 
 
@@ -74,43 +69,68 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   Rust->AddElement(O , 5);
   Rust->AddElement(Fe , 2);
   
-  G4double  Det_sizeXY = 140.0 *cm;
-  G4double  Det_sizeZ = 0.2 *cm;
-  G4double cubesize = 10.0*cm;
+  
   G4Material* Iron = nist->FindOrBuildMaterial("G4_Fe");
-  G4Material* Concrete = nist->FindOrBuildMaterial("G4_CONCRETE");  
+  G4Material* concrete = nist->FindOrBuildMaterial("G4_CONCRETE");  
   G4Material* shape2_mat = nist->FindOrBuildMaterial("G4_Ar");
   G4Material* Lead = nist->FindOrBuildMaterial("G4_Pb"); 
-  G4Material* Aluminum   = nist->FindOrBuildMaterial("G4_Al"); 
-  double Th = 20.0;
-  
-  G4RotationMatrix* RotMat = new G4RotationMatrix();
-  RotMat->rotateZ(Th*deg);
-  G4RotationMatrix* RotMat1 = new G4RotationMatrix();
-  RotMat1->rotateZ(15.0*deg);
-  G4RotationMatrix* RotMat2 = new G4RotationMatrix();
-  RotMat2->rotateZ(Th/2.0*deg);
+  G4Material* Aluminum   = nist->FindOrBuildMaterial("G4_Al");
+  G4Material* helium = nist->FindOrBuildMaterial("G4_He");
 
 
+  // Create approximate UO2 material
+  G4Element* elU = nist->FindOrBuildElement("U");
+  G4Element* elO = nist->FindOrBuildElement("O");
+  G4Material* UO2 = new G4Material("UO2", 10.97*g/cm3, 2);
+  UO2->AddElement(elU, 1);
+  UO2->AddElement(elO, 2);
+
+  // Zircaloy cladding (Zr)
+  G4Element* elZr = nist->FindOrBuildElement("Zr");
+  G4Material* Zircaloy = new G4Material("Zircaloy", 6.55*g/cm3, 1);
+  Zircaloy->AddElement(elZr, 1);
+
+  G4Material* world_mat = nist->FindOrBuildMaterial("G4_AIR");
+
+  //----------------------------------------------------------------------------------
+  // Dimensions
+  //----------------------------------------------------------------------------------
+
+  G4double  Det_sizeXY = 600.0 *cm;
+  G4double  Det_sizeZ  = 0.5 *cm;
   
-  // Envelope parameters
-  //
-  G4double env_sizeXY = 1.4*m, env_sizeZ = 1.4*m;
-  
-  // Option to switch on/off checking of volumes overlaps
-  //
+  G4double world_sizeXY = Det_sizeXY + 600.0 *cm;
+  G4double world_sizeZ  = 1300 *cm;  // Detectors span from 4 to -4m
+
+
+
+
+
+
+
+
+  // Overlaps------------------------------------------------------------------------
   G4bool checkOverlaps = true;
+
+  //
+  // Rotation
+  //
+  //==================================================================
+  //----rotation----------------------------------
+  G4RotationMatrix* RotMat = new G4RotationMatrix();
+  //  RotMat->rotateX(90.0*deg);
+  //RotMat->rotateZ(90.0*deg);
+  //RotMat->rotateY(90.0*deg);
+
 
   //     
   // World
   //
-  G4double world_sizeXY = 1.2*env_sizeXY;
-  G4double world_sizeZ  = 1.2*env_sizeZ;
-  G4Material* world_mat = nist->FindOrBuildMaterial("G4_AIR");
+
   
   G4Box* solidWorld =    
     new G4Box("World",                       //its name
-	      0.5*world_sizeXY, 0.5*world_sizeXY, 0.5*world_sizeZ);     //its size
+	      0.6*world_sizeXY, 0.6*world_sizeXY, 0.6*world_sizeZ);     //its size
       
   G4LogicalVolume* logicWorld =                         
     new G4LogicalVolume(solidWorld,          //its solid
@@ -141,14 +161,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     new G4LogicalVolume(solidUpperTracker,         //its solid
                         shape2_mat,          //its material
                         "UpperTracker");           //its name
-  for (int jk =0;jk<3;jk++){              
+  for (int kj =0;kj<3;kj++){              
     new G4PVPlacement(0,                       //no rotation
-		      G4ThreeVector(0.,0.,-25.0*cm-jk*7.0*cm),
+		      G4ThreeVector(0.,0.,400.0*cm-kj*25.0*cm),
 		      logicUpperTracker,             //its logical volume
 		      "UpperTracker",                //its name
 		      logicWorld,                //its mother  volume
 		      false,                   //no boolean operation
-		      jk,                       //copy number
+		      kj,                       //copy number
 		      checkOverlaps);          //overlaps checking
   }
 
@@ -164,166 +184,230 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     new G4LogicalVolume(solidLowerTracker,         //its solid
                         shape2_mat,          //its material
                         "LowerTracker");           //its name
-  for (int kj =0;kj<3;kj++){              
+  for (int jk =0;jk<3;jk++){              
     new G4PVPlacement(0,                       //no rotation
-		      G4ThreeVector(0.,0.,25.0*cm+kj*7.0*cm),
+		      G4ThreeVector(0.,0.,-400.0*cm+jk*25.0*cm),
 		      logicLowerTracker,             //its logical volume
 		      "LowerTracker",                //its name
 		      logicWorld,                //its mother  volume
 		      false,                   //no boolean operation
-		      kj,                       //copy number
+		      jk,                       //copy number
 		      checkOverlaps);          //overlaps checking
   }
-  
-
-
-
 
   //----------------------------------------------------------------------------------
-  //--------------------scatAngleFile---------------------------------------------
-
-  //------------base concete block---------------------------------------------
-   
-  double thickns = 10.0*cm;
-
-
-  G4VSolid* box = new G4Box("box",40.0*cm,40.0*cm,7.5*cm);
-  G4Box *box2 = new G4Box("boxx",cubesize/2.0,cubesize/2.0,thickns/2.0); // l: 1 cm
-
-
-
-  G4SubtractionSolid*RCCS0= new  G4SubtractionSolid ("RCCS0",box,box2,0,G4ThreeVector(15.0*cm,15.0*cm,0.0*cm) ); // 10,20,30,40,50,60,70
-  G4SubtractionSolid*RCCS1= new  G4SubtractionSolid ("RCCS1",RCCS0,box2,0,G4ThreeVector(-15.0*cm,15.0*cm,0.0*cm) ); // 20
-  G4SubtractionSolid*RCCS2= new  G4SubtractionSolid ("RCCS2",RCCS1,box2,0,G4ThreeVector(-15.0*cm,-15.0*cm,0.0*cm) ); //30
-  G4SubtractionSolid*RCCS3= new  G4SubtractionSolid ("RCCS3",RCCS2,box2,0,G4ThreeVector(15.0*cm,-15.0*cm,0.0*cm) ); //30
-
- 
-
-  G4LogicalVolume* RCCLV
-    = new G4LogicalVolume(
-			  RCCS3,             // its solid
-			  Concrete,      // its material
-			  "RCCLV");         // its name
-                                   
-  new G4PVPlacement(
-		    0,                // no rotation
-		    G4ThreeVector(), // its position
-		    RCCLV,            // its logical volume                         
-		    "RCC",            // its name
-		    logicWorld,          // its mother  volume
-		    false,            // no boolean operation
-		    0,                // copy number
-		    0);  // checking overlaps
-
-
-
-
-  //--------------------- Air Cube---------------------------------------
-
-  G4VSolid* voidbox1 = new G4Box("voidbox1",cubesize/2.0,cubesize/2.0,thickns/2.0);
-  G4LogicalVolume* voidboxLV1
-    = new G4LogicalVolume(
-			  voidbox1,             // its solid
-			  world_mat,      // its material
-			  "voidboxLV1");         // its name
-
-  new G4PVPlacement(
-		    0,                // no rotation
-		    G4ThreeVector(15.0*cm,15.0*cm,0.0*cm), // its position
-		    voidboxLV1,            // its logical volume                         
-		    "voidbox1",            // its name
-		    logicWorld,          // its mother  volume
-		    false,            // no boolean operation
-		    0,                // copy number
-		    0);  // checking overlaps
-
-
-
-  //--------------------- Iron Cube---------------------------------------
-
-  G4VSolid* voidbox5 = new G4Box("voidbox5",cubesize/2.0,cubesize/2.0,thickns/2.0);
-  G4LogicalVolume* voidboxLV5
-    = new G4LogicalVolume(
-			  voidbox5,             // its solid
-			  Iron,      // its material
-			  "voidboxLV5");         // its name
-
-  new G4PVPlacement(
-		    0,                // no rotation
-		    G4ThreeVector(15.0*cm,-15.0*cm,0.0), // its position
-		    voidboxLV5,            // its logical volume                         
-		    "voidbox5",            // its name
-		    logicWorld,          // its mother  volume
-		    false,            // no boolean operation
-		    0,                // copy number
-		    0);  // checking overlaps
-
-
-  //--------------------- Aluminum Cube-----------------------------------
-  G4VSolid* voidbox7 = new G4Box("voidbox7",cubesize/2.0,cubesize/2.0,thickns/2.0);
-  G4LogicalVolume* voidboxLV7
-    = new G4LogicalVolume(
-			  voidbox7,             // its solid
-			  Aluminum,      // its material
-			  "voidboxLV7");         // its name
-
-  new G4PVPlacement(
-		    0,                // no rotation
-		    G4ThreeVector(-15.0*cm,-15.0*cm,0.0), // its position
-		    voidboxLV7,            // its logical volume                         
-		    "voidbox7",            // its name
-		    logicWorld,          // its mother  volume
-		    false,            // no boolean operation
-		    0,                // copy number
-		    0);  // checking overlaps
-
-
-
-  //--------------------- Lead Cube---------------------------------------
-
-  G4VSolid* voidbox8 = new G4Box("voidbox8",cubesize/2.0,cubesize/2.0,thickns/2.0);
-  G4LogicalVolume* voidboxLV8
-    = new G4LogicalVolume(
-			  voidbox8,             // its solid
-			  Lead,      // its material
-			  "voidboxLV8");         // its name
-
-  new G4PVPlacement(
-		    0,                // no rotation
-		    G4ThreeVector(-15.0*cm,15.0*cm,0.0), // its position
-		    voidboxLV8,            // its logical volume                         
-		    "voidbox8",            // its name
-		    logicWorld,          // its mother  volume
-		    false,            // no boolean operation
-		    0,                // copy number
-		    0);  // checking overlaps
-
-
+  // HI-STORM-like CASK GEOMETRY
+  //----------------------------------------------------------------------------------
   
-  //  fScoringVolume = logicShape3;
-  //  fScoringVolume1 = logicShape2;
-    
+
+  // Overall cask envelope
+  const G4double caskOuterRadius = 1.75*m;   // outer radius of overpack
+  const G4double caskHeight      = 4.5*m;    // total height (body + lids)
+
+  // Radial layering for METCON overpack
+  const G4double outerSteelThk   = 0.05*m;   // outer steel shell thickness
+  const G4double concreteThk     = 0.25*m;   // concrete thickness
+  const G4double innerSteelThk   = 0.05*m;   // inner steel shell thickness
+
+  const G4double shellOuterInnerR = caskOuterRadius - outerSteelThk;       // inner radius of outer steel
+  const G4double shellInnerOuterR = shellOuterInnerR - concreteThk;        // outer radius of inner steel
+  const G4double cavityRadius     = shellInnerOuterR - innerSteelThk;      // inner radius of inner steel (cavity)
+
+  // Axial layering: side body + top/bottom lids
+  const G4double lidSteelThk   = 0.05*m;
+  const G4double lidConcThk    = 0.25*m;
+  const G4double lidStackThk   = lidSteelThk + lidConcThk;                 // each end
+  const G4double bodyHeight    = caskHeight - 2.0*lidStackThk;             // cylindrical body between lids
+  const G4double bodyHalfHeight = bodyHeight/2.0;
+
+  // Cavity height (space where fuel can sit)
+  const G4double cavityHeight  = bodyHeight - 2.0*0.05*m;                  // small axial clearance
+
+  // Canister dimensions (simple cylinder inside cavity)
+  const G4double canisterRad    = cavityRadius - 0.05*m;                   // radial gap between inner shell & canister
+  const G4double canisterHeight = cavityHeight - 0.10*m;                   // axial gap top/bottom
+
+  // ASSEMBLIES
+
+  const G4int    nRows           = 6;
+  const G4int    nCols           = 6;
+  const G4double assemblyPitch   = 0.37*m;
+  const G4double assemblyRadius  = 0.16*m;
+  const G4double assemblyHeight  = canisterHeight - 0.10*m;
+  const G4double assemblyZPos    = 0.0*m;                                  // center
+
+  // Overpack body, outer steel, concrete, inner steel 
+
+  // Outer steel shell (body)
+  G4Tubs* solidOuterShell = new G4Tubs("OuterShell",
+				       shellOuterInnerR,  // inner radius
+				       caskOuterRadius,   // outer radius
+				       bodyHalfHeight,    // half height
+				       0.*deg, 360.*deg);
+  G4LogicalVolume* logicOuterShell =
+    new G4LogicalVolume(solidOuterShell, steel, "OuterShell");
+  new G4PVPlacement(0, G4ThreeVector(0,0,0),
+		    logicOuterShell, "OuterShell",
+		    logicWorld, false, 0, checkOverlaps);
+
+  // Concrete layer
+  G4Tubs* solidConcrete = new G4Tubs("CaskConcrete",
+				     shellInnerOuterR,    // inner radius
+				     shellOuterInnerR,    // outer radius
+				     bodyHalfHeight,
+				     0.*deg, 360.*deg);
+  G4LogicalVolume* logicConcrete =
+    new G4LogicalVolume(solidConcrete, concrete, "CaskConcrete");
+  new G4PVPlacement(0, G4ThreeVector(0,0,0),
+		    logicConcrete, "CaskConcrete",
+		    logicWorld, false, 0, checkOverlaps);
+
+  // Inner steel shell
+  G4Tubs* solidInnerShell = new G4Tubs("InnerShell",
+				       cavityRadius,      // inner radius
+				       shellInnerOuterR,  // outer radius
+				       bodyHalfHeight,
+				       0.*deg, 360.*deg);
+  G4LogicalVolume* logicInnerShell =
+    new G4LogicalVolume(solidInnerShell, steel, "InnerShell");
+  new G4PVPlacement(0, G4ThreeVector(0,0,0),
+		    logicInnerShell, "InnerShell",
+		    logicWorld, false, 0, checkOverlaps);
+
+  // Cavity (helium gap inside inner shell)
+
+  G4Tubs* solidCavity = new G4Tubs("Cavity",
+				   0.0,
+				   cavityRadius,
+				   cavityHeight/2.0,
+				   0.*deg, 360.*deg);
+  G4LogicalVolume* logicCavity =
+    new G4LogicalVolume(solidCavity, helium, "Cavity");
+  //new G4PVPlacement(0, G4ThreeVector(0,0,0),
+  //              logicCavity, "Cavity",
+  //            logicInnerShell, false, 0, checkOverlaps);
+
+  // Inner stainless-steel canister
+
+  G4Material* stainlessSteel = steel; 
+
+  G4Tubs* solidCanister = new G4Tubs("Canister",
+				     (canisterRad-0.05*m),
+				     canisterRad,
+				     canisterHeight/2.0,
+				     0.*deg, 360.*deg);
+  G4LogicalVolume* logicCanister =
+    new G4LogicalVolume(solidCanister, stainlessSteel, "Canister");
+  new G4PVPlacement(0, G4ThreeVector(0,0,0),
+		    logicCanister, "Canister",
+		    logicWorld, false, 0, checkOverlaps);
+
+  // Top & bottom lids: steel + concrete 
+
+  // Top steel lid (full outer radius)
+  G4Tubs* solidTopSteel = new G4Tubs("TopSteelLid",
+				     0.0,
+				     caskOuterRadius,
+				     lidSteelThk/2.0,
+				     0.*deg, 360.*deg);
+  G4LogicalVolume* logicTopSteel =
+    new G4LogicalVolume(solidTopSteel, steel, "TopSteelLid");
+  new G4PVPlacement(0,
+		    G4ThreeVector(0,0, bodyHalfHeight + lidSteelThk/2.0 + lidConcThk),
+		    logicTopSteel, "TopSteelLid",
+		    logicWorld, false, 0, checkOverlaps);
+
+  // Top concrete lid between inner & outer shell
+  G4Tubs* solidTopConc = new G4Tubs("TopConcreteLid",
+				    0.0,
+				    shellOuterInnerR,      // up to inner face of outer steel
+				    lidConcThk/2.0,
+				    0.*deg, 360.*deg);
+  G4LogicalVolume* logicTopConc =
+    new G4LogicalVolume(solidTopConc, concrete, "TopConcreteLid");
+  new G4PVPlacement(0,
+		    G4ThreeVector(0,0, bodyHalfHeight + lidConcThk/2.0),
+		    logicTopConc, "TopConcreteLid",
+		    logicWorld, false, 0, checkOverlaps);
+
+  // Bottom steel base
+  G4Tubs* solidBotSteel = new G4Tubs("BottomSteelBase",
+				     0.0,
+				     caskOuterRadius,
+				     lidSteelThk/2.0,
+				     0.*deg, 360.*deg);
+  G4LogicalVolume* logicBotSteel =
+    new G4LogicalVolume(solidBotSteel, steel, "BottomSteelBase");
+  new G4PVPlacement(0,
+		    G4ThreeVector(0,0, -bodyHalfHeight - lidSteelThk/2.0 - lidConcThk),
+		    logicBotSteel, "BottomSteelBase",
+		    logicWorld, false, 0, checkOverlaps);
+
+  // Bottom concrete base
+  G4Tubs* solidBotConc = new G4Tubs("BottomConcreteBase",
+				    0.0,
+				    shellOuterInnerR,
+				    lidConcThk/2.0,
+				    0.*deg, 360.*deg);
+  G4LogicalVolume* logicBotConc =
+    new G4LogicalVolume(solidBotConc, concrete, "BottomConcreteBase");
+  new G4PVPlacement(0,
+		    G4ThreeVector(0,0, -bodyHalfHeight - lidConcThk/2.0),
+		    logicBotConc, "BottomConcreteBase",
+		    logicWorld, false, 0, checkOverlaps);
+
+  //Basket: assemblies placed INSIDE the canister
+
+  const G4double gridWidth  = (nCols-1)*assemblyPitch;
+  const G4double gridHeight = (nRows-1)*assemblyPitch;
+
+  G4Tubs* solidAssembly =
+    new G4Tubs("Assembly", 0.0, assemblyRadius,
+	       assemblyHeight/2.0, 0.*deg, 360.*deg);
+  G4LogicalVolume* logicAssembly =
+    new G4LogicalVolume(solidAssembly, UO2, "Assembly");
+
+  //G4VisAttributes* uo2Colour = new G4VisAttributes(G4Colour(1.0,0.5,0.0));
+  //uo2Colour->SetForceSolid(true);
+  //logicAssembly->SetVisAttributes(uo2Colour);
+
+  for (G4int i=0; i<nCols; ++i) {
+    for (G4int j=0; j<nRows; ++j) {
+      G4double x = -gridWidth/2.0  + i*assemblyPitch;
+      G4double y = -gridHeight/2.0 + j*assemblyPitch;
+
+      // Keep assemblies inside canister radius with a small margin
+      if (std::sqrt(x*x + y*y) + assemblyRadius > canisterRad - 0.06*m) continue;
+
+      new G4PVPlacement(0, G4ThreeVector(x,y,assemblyZPos),
+			logicAssembly, "AssemblyPV",
+			logicWorld, false, i*100+j, checkOverlaps);
+    }
+  }
+
+
+
   //
   //always return the physical World
   //
 
-   return physWorld;
+  return physWorld;
 }
 
-  void DetectorConstruction::ConstructSDandField()
-  {
-    auto sdManager = G4SDManager::GetSDMpointer();
+void DetectorConstruction::ConstructSDandField()
+{
+  auto sdManager = G4SDManager::GetSDMpointer();
 
-    // --- Upper detector SD ---
-    auto upperTrackerSD = new TrackerSD("UpperTrackerSD", "UpperHitsCollection",0);
-    sdManager->AddNewDetector(upperTrackerSD);
-    SetSensitiveDetector("UpperTracker", upperTrackerSD, true);
+  // --- Upper detector SD ---
+  auto upperTrackerSD = new TrackerSD("UpperTrackerSD", "UpperHitsCollection",0);
+  sdManager->AddNewDetector(upperTrackerSD);
+  SetSensitiveDetector("UpperTracker", upperTrackerSD, true);
 
-    // --- Lower detector SD ---
-    auto lowerTrackerSD = new TrackerSD("LowerTrackerSD", "LowerHitsCollection",1);
-    sdManager->AddNewDetector(lowerTrackerSD);
-    SetSensitiveDetector("LowerTracker", lowerTrackerSD, true);
-  }
+  // --- Lower detector SD ---
+  auto lowerTrackerSD = new TrackerSD("LowerTrackerSD", "LowerHitsCollection",1);
+  sdManager->AddNewDetector(lowerTrackerSD);
+  SetSensitiveDetector("LowerTracker", lowerTrackerSD, true);
+}
  
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

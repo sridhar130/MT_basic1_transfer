@@ -105,29 +105,45 @@
 # Attach text to one corner of Shape2, with a small, fixed offset
 #/vis/scene/add/text 6 7 10 cm 18 4 4 Shape2
 #
-#--------------New Geometries
-#/vis/geometry/set/forceSolid brod2
-#/vis/viewer/set/background 1.0 1.0 1.0 0.5
-/vis/geometry/set/forceSolid RCCLV
-/vis/geometry/set/forceSolid brod2m   #center rod
-/vis/geometry/set/forceSolid brod2a   #right outer
-/vis/geometry/set/forceSolid brod2b   #right inner
-/vis/geometry/set/forceSolid brod2c   # left outer
-/vis/geometry/set/forceSolid brod2d   #left inner
+#--------------New Geometries (HI-STORM Cask)
 
-/vis/geometry/set/colour brod2a 0 0.5 0.5 0.5 0.8  # 0 0.9 0.2 0.2 0.8
-/vis/geometry/set/colour brod2b 0 1.0 0.27 0.0 0.3
-/vis/geometry/set/colour brod2c 0 0.9 0.2 0.2 0.5
-/vis/geometry/set/colour brod2d 0 0.9 1.0 0.9 0.8
-/vis/geometry/set/colour brod2m 0 0.5 0.5 0.5 0.8 # 0 0.9 0.2 0.2 0.8
-/vis/geometry/set/colour RCCLV 0 0.99 0.99 0.99 0.2
+# 1. The Fuel Assemblies (Make them POP)
+/vis/geometry/set/forceSolid Assembly
+/vis/geometry/set/colour Assembly 0 1.0 0.5 0.0 1.0  # Bright Orange, fully opaque
+
+# 2. The Internal Cavity & Canister (Highly transparent or invisible)
+/vis/geometry/set/forceSolid Canister
+/vis/geometry/set/colour Canister 0 0.7 0.7 0.7 0.1  # Light gray, 10% opaque
+# Make the helium cavity completely invisible so it doesn't cloud the rods
+/vis/geometry/set/visibility Cavity 0 false
+
+# 3. Outer Shielding Layers (Wireframes for best visibility)
+/vis/geometry/set/forceWireframe InnerShell
+/vis/geometry/set/colour InnerShell 0 0.6 0.6 0.6 0.8  # Dark gray wire
+/vis/geometry/set/forceWireframe CaskConcrete
+/vis/geometry/set/colour CaskConcrete 0 0.8 0.8 0.8 0.5  # Lighter gray wire
+/vis/geometry/set/forceWireframe OuterShell
+/vis/geometry/set/colour OuterShell 0 0.4 0.4 0.4 0.8  # Dark gray wire
+
+# 4. Lids and Bases (Wireframes so they don't block top/bottom views)
+/vis/geometry/set/forceWireframe TopSteelLid
+/vis/geometry/set/colour TopSteelLid 0 0.4 0.4 0.4 0.8
+/vis/geometry/set/forceWireframe TopConcreteLid
+/vis/geometry/set/colour TopConcreteLid 0 0.8 0.8 0.8 0.5
+/vis/geometry/set/forceWireframe BottomSteelBase
+/vis/geometry/set/colour BottomSteelBase 0 0.4 0.4 0.4 0.8
+/vis/geometry/set/forceWireframe BottomConcreteBase
+/vis/geometry/set/colour BottomConcreteBase 0 0.8 0.8 0.8 0.5
+
+# 5. The Trackers (Visible, transparent plates)
+/vis/geometry/set/forceSolid UpperTracker
+/vis/geometry/set/colour UpperTracker 0 0.0 1.0 0.0 0.3  # Transparent Green
+/vis/geometry/set/forceSolid LowerTracker
+/vis/geometry/set/colour LowerTracker 0 0.0 1.0 0.0 0.3  # Transparent Green
 
 
-# To get nice view
-# Make the "World" box invisible
+
 /vis/geometry/set/visibility World 0 false
-/vis/geometry/set/visibility Shape5 0 false
-/vis/geometry/set/visibility Shape4 0 false
 
 # "Envelope" is transparent blue to represent water
 /vis/geometry/set/colour Envelope 0 0 0 1 .3
