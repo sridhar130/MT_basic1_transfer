@@ -49,7 +49,8 @@ PrimaryGeneratorAction::~PrimaryGeneratorAction() = default;
 void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset)
 {
   // 1. Load CRY configuration file
-  std::ifstream inputFile("/home/sridhar/G4Dev/cry_v1.7/configGaisser_short.txt");
+
+  std::ifstream inputFile("/home/sinjini/STProducts/G4Dev/cry_v1.7/configGaisser_short.txt");
   if (!inputFile.is_open()) {
     G4Exception("PrimaryGeneratorAction::InitializeCRY",
                 "CRYConfig", FatalException, "Cannot open CRY config file");
@@ -58,7 +59,7 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
                           std::istreambuf_iterator<char>());
 
   // 2. Initialize CRY setup (pass data directory as string)
-  std::string cryDataDir = "/home/sridhar/G4Dev/cry_v1.7/data";
+  std::string cryDataDir = "/home/sinjini/STProducts/G4Dev/cry_v1.7/data";
   fCrySetup = std::make_unique<CRYSetup>(setupString, cryDataDir);
 
   // 3. Create generator (constructor signature depends on CRY version)
@@ -81,7 +82,7 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
 
   void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
   // choose detector half-size (match DetectorConstruction Det_sizeXY/2)
-  const G4double det_half_xy = 70.0*cm; // 140 cm / 2
+  const G4double det_half_xy = 80.0*cm; // 140 cm / 2
   std::vector<CRYParticle*> parts;
   fCryGen->genEvent(&parts);   // CRY API: fills vector with pointers to CRYParticle
 
@@ -102,16 +103,16 @@ void PrimaryGeneratorAction::InitializeCRY(int masterSeed, long long eventOffset
   // Direction: CRY u,v,w are direction cosines.
   // Determine direction and make sure it points into the detector.
   G4ThreeVector dir(p->u(), p->v(), p->w());
-  // In many CRY setups w<0 means downward; for your geometry
+  // In many CRY setups w<0 means downward;
   // an incoming cosmic from "above" should go from negative z -> positive z,
-  // so flip sign if necessary to point towards +z (into your detectors).
+  // so flip sign if necessary to point towards +z (needed for current detector setup).
   if (dir.z() < 0) dir.setZ(-dir.z());   // flip if CRY uses negative-down convention
   dir = dir.unit();
 
-  // Choose a generation Z that is above the upper tracker (tune as needed)
-  // Your detectors are around z = -25cm (upper) and +25cm (lower) so set generation
-  // plane at e.g. z = -150 cm (above upper in world coords) OR choose 1.0*m
-  G4double genZ = -150.0*cm;  // try -150cm (above upper tracker at -25cm)
+  // Choose a generation Z that is above the upper tracker 
+  // z = -25cm (upper) and +25cm (lower) so
+  // plane at e.g. z = -50 cm 
+  G4double genZ = -50.0*cm; 
 
   // Choose X,Y uniformly inside detector acceptance so particles actually hit
   G4double x = (G4UniformRand() - 0.5) * 2.0 * det_half_xy;
@@ -161,7 +162,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
   //  fParticleGun->SetParticleDefinition(particle);
   fParticleGun->SetParticleEnergy(3.0*GeV);
   fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0,0,1));
-  fParticleGun->SetParticlePosition(G4ThreeVector(0,0,-150*cm));
+  fParticleGun->SetParticlePosition(G4ThreeVector(0,0,-50*cm));
   fParticleGun->GeneratePrimaryVertex(anEvent);
 }
 */

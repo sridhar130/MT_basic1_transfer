@@ -25,7 +25,7 @@ include(${Geant4_USE_FILE})
 
 #----------------------------------------------------------------------------
 # --- CRY setup ---
-set(CRY_HOME "/home/sridhar/G4Dev/cry_v1.7")
+set(CRY_HOME "/home/sinjini/STProducts/G4Dev/cry_v1.7")
 include_directories(${CRY_HOME}/src)
 link_directories(${CRY_HOME}/lib)
 

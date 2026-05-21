@@ -1,9 +1,8 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 // This file is for the volume:
-// Rusted Rebar
-// Placed at center
-// Used in EPJ plus paper
-// Vary defect thickness
+// Large Concrete Block: 80*80*15 cm3
+// 4 blocks of: 10*10*10 cm3 submergerd into it.
+// Lead, Air, Iron, Aluminum
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 #include "DetectorConstruction.hh"
 #include "G4RunManager.hh"
@@ -83,55 +82,35 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4Material* shape2_mat = nist->FindOrBuildMaterial("G4_Ar");
   G4Material* Lead = nist->FindOrBuildMaterial("G4_Pb"); 
   G4Material* Aluminum   = nist->FindOrBuildMaterial("G4_Al"); 
+  double Th = 20.0;
+  
+  G4RotationMatrix* RotMat = new G4RotationMatrix();
+  RotMat->rotateZ(Th*deg);
+  G4RotationMatrix* RotMat1 = new G4RotationMatrix();
+  RotMat1->rotateZ(15.0*deg);
+  G4RotationMatrix* RotMat2 = new G4RotationMatrix();
+  RotMat2->rotateZ(Th/2.0*deg);
 
+
+  
   // Envelope parameters
   //
   G4double env_sizeXY = 1.4*m, env_sizeZ = 1.4*m;
-
-  G4double world_sizeXY = 1.2*env_sizeXY;
-  G4double world_sizeZ  = 1.2*env_sizeZ;
-  G4Material* world_mat = nist->FindOrBuildMaterial("G4_AIR");
-
-  // Rusted Rod parameters
-
-  // scaling
-  G4double scale = 2.0;  // make everything twice larger
-
-  G4double Concrete_h_length = 12.5*cm * scale; 
-  G4double Concrete_h_x = 5.0*cm * scale;
-  G4double Concrete_h_y = 5.0*cm * scale;
-  G4double Rebar_h_length = 12.0*cm * scale;
-  G4double tol = 0.0001* cm * scale;
-  G4double Steel_l = 1.5* cm * scale;
-  G4double Rust_l = 2.0* cm * scale;
-  G4double RodRad = 1.5 * cm * scale; // Total Rebar thickness
-  // don't scale these
-  G4double CenterRad = 0.7*RodRad; // Un-rusted/ core rebar
-  G4double DefectFrac = 0.3; // Defect percent in rebar
-  G4double xi,xii = 0.0;
+  
   // Option to switch on/off checking of volumes overlaps
   //
   G4bool checkOverlaps = true;
 
-  //
-  // Rotation
-  //
-  //==================================================================
-  //----rotation----------------------------------
-  G4RotationMatrix* RotMat = new G4RotationMatrix();
-  //  RotMat->rotateX(90.0*deg);
-  //RotMat->rotateZ(90.0*deg);
-  RotMat->rotateY(90.0*deg);
-
-
   //     
   // World
   //
-
+  G4double world_sizeXY = 1.2*env_sizeXY;
+  G4double world_sizeZ  = 1.2*env_sizeZ;
+  G4Material* world_mat = nist->FindOrBuildMaterial("G4_AIR");
   
   G4Box* solidWorld =    
     new G4Box("World",                       //its name
-	      0.6*world_sizeXY, 0.6*world_sizeXY, 0.6*world_sizeZ);     //its size
+	      0.5*world_sizeXY, 0.5*world_sizeXY, 0.5*world_sizeZ);     //its size
       
   G4LogicalVolume* logicWorld =                         
     new G4LogicalVolume(solidWorld,          //its solid
@@ -203,79 +182,124 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //----------------------------------------------------------------------------------
   //--------------------scatAngleFile---------------------------------------------
 
-  //-------------------- concrete slab iron rod rust defect------------------------------------------------------------------
-  // Subtraction volume to remove the concrete from the rusted_rebar region
+  //------------base concete block---------------------------------------------
+   
+  double thickns = 10.0*cm;
+
+
+  G4VSolid* box = new G4Box("box",40.0*cm,40.0*cm,7.5*cm);
+  G4Box *box2 = new G4Box("boxx",cubesize/2.0,cubesize/2.0,thickns/2.0); // l: 1 cm
 
 
 
-  G4VSolid* box = new G4Box("box",Concrete_h_x,Concrete_h_x,Concrete_h_length);
-  //G4Tubs *box2 = new G4Tubs("box2",0.0*cm,1.0*cm, 4.5*cm, 0, 2*M_PI); // l: 1 cm
-  G4Tubs *box2 = new G4Tubs("box2",0.0*cm,RodRad,Rebar_h_length,0,2*M_PI);
+  G4SubtractionSolid*RCCS0= new  G4SubtractionSolid ("RCCS0",box,box2,0,G4ThreeVector(15.0*cm,15.0*cm,0.0*cm) ); // 10,20,30,40,50,60,70
+  G4SubtractionSolid*RCCS1= new  G4SubtractionSolid ("RCCS1",RCCS0,box2,0,G4ThreeVector(-15.0*cm,15.0*cm,0.0*cm) ); // 20
+  G4SubtractionSolid*RCCS2= new  G4SubtractionSolid ("RCCS2",RCCS1,box2,0,G4ThreeVector(-15.0*cm,-15.0*cm,0.0*cm) ); //30
+  G4SubtractionSolid*RCCS3= new  G4SubtractionSolid ("RCCS3",RCCS2,box2,0,G4ThreeVector(15.0*cm,-15.0*cm,0.0*cm) ); //30
 
-
-  G4SubtractionSolid*RCCS= new  G4SubtractionSolid ("RCCS",box,box2,0,G4ThreeVector(0.0*cm,0.0*cm,0.0*cm));
-
+ 
 
   G4LogicalVolume* RCCLV
     = new G4LogicalVolume(
-			  RCCS,             // its solid
+			  RCCS3,             // its solid
 			  Concrete,      // its material
 			  "RCCLV");         // its name
                                    
   new G4PVPlacement(
-		    RotMat,                // no rotation
+		    0,                // no rotation
 		    G4ThreeVector(), // its position
 		    RCCLV,            // its logical volume                         
 		    "RCC",            // its name
 		    logicWorld,          // its mother  volume
 		    false,            // no boolean operation
 		    0,                // copy number
-		    0);  // checking overlaps 
+		    0);  // checking overlaps
+
+
+
+
+  //--------------------- Air Cube---------------------------------------
+
+  G4VSolid* voidbox1 = new G4Box("voidbox1",cubesize/2.0,cubesize/2.0,thickns/2.0);
+  G4LogicalVolume* voidboxLV1
+    = new G4LogicalVolume(
+			  voidbox1,             // its solid
+			  world_mat,      // its material
+			  "voidboxLV1");         // its name
+
+  new G4PVPlacement(
+		    0,                // no rotation
+		    G4ThreeVector(15.0*cm,15.0*cm,0.0*cm), // its position
+		    voidboxLV1,            // its logical volume                         
+		    "voidbox1",            // its name
+		    logicWorld,          // its mother  volume
+		    false,            // no boolean operation
+		    0,                // copy number
+		    0);  // checking overlaps
+
+
+
+  //--------------------- Iron Cube---------------------------------------
+
+  G4VSolid* voidbox5 = new G4Box("voidbox5",cubesize/2.0,cubesize/2.0,thickns/2.0);
+  G4LogicalVolume* voidboxLV5
+    = new G4LogicalVolume(
+			  voidbox5,             // its solid
+			  Iron,      // its material
+			  "voidboxLV5");         // its name
+
+  new G4PVPlacement(
+		    0,                // no rotation
+		    G4ThreeVector(15.0*cm,-15.0*cm,0.0), // its position
+		    voidboxLV5,            // its logical volume                         
+		    "voidbox5",            // its name
+		    logicWorld,          // its mother  volume
+		    false,            // no boolean operation
+		    0,                // copy number
+		    0);  // checking overlaps
+
+
+  //--------------------- Aluminum Cube-----------------------------------
+  G4VSolid* voidbox7 = new G4Box("voidbox7",cubesize/2.0,cubesize/2.0,thickns/2.0);
+  G4LogicalVolume* voidboxLV7
+    = new G4LogicalVolume(
+			  voidbox7,             // its solid
+			  Aluminum,      // its material
+			  "voidboxLV7");         // its name
+
+  new G4PVPlacement(
+		    0,                // no rotation
+		    G4ThreeVector(-15.0*cm,-15.0*cm,0.0), // its position
+		    voidboxLV7,            // its logical volume                         
+		    "voidbox7",            // its name
+		    logicWorld,          // its mother  volume
+		    false,            // no boolean operation
+		    0,                // copy number
+		    0);  // checking overlaps
+
+
+
+  //--------------------- Lead Cube---------------------------------------
+
+  G4VSolid* voidbox8 = new G4Box("voidbox8",cubesize/2.0,cubesize/2.0,thickns/2.0);
+  G4LogicalVolume* voidboxLV8
+    = new G4LogicalVolume(
+			  voidbox8,             // its solid
+			  Lead,      // its material
+			  "voidboxLV8");         // its name
+
+  new G4PVPlacement(
+		    0,                // no rotation
+		    G4ThreeVector(-15.0*cm,15.0*cm,0.0), // its position
+		    voidboxLV8,            // its logical volume                         
+		    "voidbox8",            // its name
+		    logicWorld,          // its mother  volume
+		    false,            // no boolean operation
+		    0,                // copy number
+		    0);  // checking overlaps
+
 
   
-
-  //--------------------------------center rod------------------------------------------------------------
-  // Center of the Rod of smaller rad and non defected.
-
-  G4Tubs * brod2m = new G4Tubs("brod2m", 0.0*cm,CenterRad,Rebar_h_length, 0, 2*M_PI); // r: 0 -> 50      
-
-  G4LogicalVolume*brod2Logicalm
-    = new G4LogicalVolume(brod2m,Steel,"brod2m");
-
-  new G4PVPlacement(RotMat,G4ThreeVector(0.0*cm,0.0*cm,0.0*cm),brod2Logicalm,//
-		    "brod2Physicalm",logicWorld,//logicWorld,
-		    false,0,0); 
-
-  //--------------------------Steel outers-----------------------------------------
-  //outers with steel at -10.5 ,-3.5, 3.5 & 10.5
-  G4Tubs * brod2a = new G4Tubs("brod2a",CenterRad,RodRad, Steel_l-tol, 0, 2*M_PI); // r: 0 -> 50      
-
-  for (int i=0;i<4;i++){
-    xi = (-10.5 + 7.0*i)*scale;  
-    G4LogicalVolume*brod2Logicala
-      = new G4LogicalVolume(brod2a,Steel,"brod2a");//rust
-
-    new G4PVPlacement(RotMat,G4ThreeVector(xi*cm,0.0*cm,0.0*cm),brod2Logicala,//
-		      "brod2Physicala",logicWorld,//logicWorld,
-		      false,0,0);
-  } 
-
-  //--------------------------Rust outers-----------------------------------------
-  //outers with rust at -7 ,0, 7
-  G4Tubs * brod2b = new G4Tubs("brod2b",CenterRad,RodRad, Rust_l-tol, 0, 2*M_PI); // r: 0 -> 50      
-
-  for (int i=0;i<3;i++){
-    xii = (-7 + 7.0*i)*scale;  
-    G4LogicalVolume*brod2Logicalb
-      = new G4LogicalVolume(brod2b,Rust,"brod2b");//rust
-
-    new G4PVPlacement(RotMat,G4ThreeVector(xii*cm,0.0*cm,0.0*cm),brod2Logicalb,//
-		      "brod2Physicalb",logicWorld,//logicWorld,
-		      false,0,0);
-  } 
-
-
-
   //  fScoringVolume = logicShape3;
   //  fScoringVolume1 = logicShape2;
     
@@ -283,23 +307,23 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //always return the physical World
   //
 
-  return physWorld;
+   return physWorld;
 }
 
-void DetectorConstruction::ConstructSDandField()
-{
-  auto sdManager = G4SDManager::GetSDMpointer();
+  void DetectorConstruction::ConstructSDandField()
+  {
+    auto sdManager = G4SDManager::GetSDMpointer();
 
-  // --- Upper detector SD ---
-  auto upperTrackerSD = new TrackerSD("UpperTrackerSD", "UpperHitsCollection",0);
-  sdManager->AddNewDetector(upperTrackerSD);
-  SetSensitiveDetector("UpperTracker", upperTrackerSD, true);
+    // --- Upper detector SD ---
+    auto upperTrackerSD = new TrackerSD("UpperTrackerSD", "UpperHitsCollection",0);
+    sdManager->AddNewDetector(upperTrackerSD);
+    SetSensitiveDetector("UpperTracker", upperTrackerSD, true);
 
-  // --- Lower detector SD ---
-  auto lowerTrackerSD = new TrackerSD("LowerTrackerSD", "LowerHitsCollection",1);
-  sdManager->AddNewDetector(lowerTrackerSD);
-  SetSensitiveDetector("LowerTracker", lowerTrackerSD, true);
-}
+    // --- Lower detector SD ---
+    auto lowerTrackerSD = new TrackerSD("LowerTrackerSD", "LowerHitsCollection",1);
+    sdManager->AddNewDetector(lowerTrackerSD);
+    SetSensitiveDetector("LowerTracker", lowerTrackerSD, true);
+  }
  
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

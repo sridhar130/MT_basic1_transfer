@@ -1,4 +1,5 @@
-// more than 6 detectors hit
+//EventAction_nominal.cc
+// At least 6 hits does not matter which particle and no uppper limit..
 // time window 50 ns
 // First detector must have only 1 hit
 #include "EventAction.hh"
