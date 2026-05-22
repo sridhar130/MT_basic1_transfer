@@ -1,0 +1,20 @@
+#/control/verbose 2
+#/tracking/verbose 1
+#/control/saveHistory
+#/run/verbose 2
+#
+/process/em/verbose 0
+/process/had/verbose 0
+/process/verbose 0
+
+/run/numberOfThreads 12 #16
+#
+# Initialize kernel
+/run/initialize
+#
+# Visualization setting
+#/control/execute vis.mac #off
+
+/random/setSeeds 6589533 21755 # no need to change for ind. chunks
+/control/loop runi.mac i 0 9 1
+

@@ -16,5 +16,14 @@
 # Visualization setting
 #/control/execute vis.mac
 /random/setSeeds 6589533 21755
-/run/beamOn 1000000 #100000
+/run/beamOn 1000000
+
+/random/setSeeds 6469533 21755
+/run/beamOn 1000000
+
+/random/setSeeds 6229533 11755
+/run/beamOn 1000000
+
+/random/setSeeds 6589533 10755
+/run/beamOn 1000000 
 #/process/list

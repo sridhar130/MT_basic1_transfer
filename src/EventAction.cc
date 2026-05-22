@@ -192,23 +192,26 @@ void EventAction::EndOfEventAction(const G4Event* event)
   fRunAction->CountEvents();
   auto eventID = event->GetEventID();
 
+  G4int runID = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
+
   // --- 1) Fill TrackerHits ntuple for ALL hits ---
   auto fillHits = [&](TrackerHitsCollection* hc) {
     if (!hc) return;
     for (size_t i = 0; i < hc->entries(); ++i) {
       auto hit = (*hc)[i];
-      analysisManager->FillNtupleIColumn(0, 0, eventID);             // event ID
-      analysisManager->FillNtupleIColumn(0, 1, hit->GetTrackID());
-      analysisManager->FillNtupleIColumn(0, 2, hit->GetParentID());
-      analysisManager->FillNtupleIColumn(0, 3, hit->GetPDGCode());
-      analysisManager->FillNtupleIColumn(0, 4, hit->GetPlaneID());
-      analysisManager->FillNtupleIColumn(0, 5, hit->GetDetID());     // copy number
-      analysisManager->FillNtupleDColumn(0, 6, hit->GetPos().x()/mm);
-      analysisManager->FillNtupleDColumn(0, 7, hit->GetPos().y()/mm);
-      analysisManager->FillNtupleDColumn(0, 8, hit->GetPos().z()/mm);
-      analysisManager->FillNtupleDColumn(0, 9, hit->GetTime()/ns);
-      analysisManager->FillNtupleDColumn(0, 10, hit->GetEdep()/keV);
-      analysisManager->FillNtupleDColumn(0, 11, hit->GetKE()/MeV);
+      analysisManager->FillNtupleIColumn(0, 0, runID);                
+      analysisManager->FillNtupleIColumn(0, 1, eventID);             
+      analysisManager->FillNtupleIColumn(0, 2, hit->GetTrackID());
+      analysisManager->FillNtupleIColumn(0, 3, hit->GetParentID());
+      analysisManager->FillNtupleIColumn(0, 4, hit->GetPDGCode());
+      analysisManager->FillNtupleIColumn(0, 5, hit->GetPlaneID());
+      analysisManager->FillNtupleIColumn(0, 6, hit->GetDetID());     // copy number
+      analysisManager->FillNtupleDColumn(0, 7, hit->GetPos().x()/mm);
+      analysisManager->FillNtupleDColumn(0, 8, hit->GetPos().y()/mm);
+      analysisManager->FillNtupleDColumn(0, 9, hit->GetPos().z()/mm);
+      analysisManager->FillNtupleDColumn(0, 10, hit->GetTime()/ns);
+      analysisManager->FillNtupleDColumn(0, 11, hit->GetEdep()/keV);
+      analysisManager->FillNtupleDColumn(0, 12, hit->GetKE()/MeV);
       analysisManager->AddNtupleRow(0);
     }
   };
@@ -217,8 +220,8 @@ void EventAction::EndOfEventAction(const G4Event* event)
   fillHits(lowerHC);
 
   // --- 2) Fill ONE mcinfo row per accepted event ---
-  analysisManager->FillNtupleIColumn(1, 0, eventID);
-  analysisManager->FillNtupleIColumn(1, 1, 1);                  // primary track (logical label)
+  analysisManager->FillNtupleIColumn(1, 0, runID); 
+  analysisManager->FillNtupleIColumn(1, 1, eventID);
   analysisManager->FillNtupleDColumn(1, 2, fKE_Upper / MeV);
   analysisManager->FillNtupleDColumn(1, 3, t_Upper / ns);
   analysisManager->FillNtupleDColumn(1, 4, fDir_Upper.x());

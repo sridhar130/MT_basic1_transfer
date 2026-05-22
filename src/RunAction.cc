@@ -16,11 +16,14 @@
 #include "G4AccumulableManager.hh"
 #include "G4Timer.hh"
 #include "G4ios.hh"
+#include <sstream>
+#include <iomanip>
+
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 RunAction::RunAction()
   : G4UserRunAction(),
-    fEventCount(0),    // ✅ initialize accumulable
+    fEventCount(0),    //
     fTimer(new G4Timer)
 {
 
@@ -29,6 +32,7 @@ RunAction::RunAction()
   analysisManager->SetVerboseLevel(1);
   analysisManager->SetNtupleMerging(true);
   analysisManager->CreateNtuple("TrackerHits", "Hit data");
+  analysisManager->CreateNtupleIColumn("runID");
   analysisManager->CreateNtupleIColumn("eventID");
   analysisManager->CreateNtupleIColumn("TrackID");
   analysisManager->CreateNtupleIColumn("ParentID");
@@ -43,19 +47,19 @@ RunAction::RunAction()
   analysisManager->CreateNtupleDColumn("KE");
   analysisManager->FinishNtuple();
   // mc info
-  analysisManager->CreateNtuple("mcinfo", "mc data");
-  analysisManager->CreateNtupleIColumn("eventID");
-  analysisManager->CreateNtupleIColumn("TrackID");
-  analysisManager->CreateNtupleDColumn("keu");
-  analysisManager->CreateNtupleDColumn("timeu");
-  analysisManager->CreateNtupleDColumn("upx");
-  analysisManager->CreateNtupleDColumn("upy");
-  analysisManager->CreateNtupleDColumn("upz");
-  analysisManager->CreateNtupleDColumn("kel");
-  analysisManager->CreateNtupleDColumn("timel");
-  analysisManager->CreateNtupleDColumn("lpx");
-  analysisManager->CreateNtupleDColumn("lpy");
-  analysisManager->CreateNtupleDColumn("lpz");
+  analysisManager->CreateNtuple("mcinfo", "mc data"); 
+  analysisManager->CreateNtupleIColumn("runID");     //0 
+  analysisManager->CreateNtupleIColumn("eventID");   //1
+  analysisManager->CreateNtupleDColumn("keu");       //2
+  analysisManager->CreateNtupleDColumn("timeu");     //3
+  analysisManager->CreateNtupleDColumn("upx");       //4
+  analysisManager->CreateNtupleDColumn("upy");       //5
+  analysisManager->CreateNtupleDColumn("upz");       //6
+  analysisManager->CreateNtupleDColumn("kel");       //7
+  analysisManager->CreateNtupleDColumn("timel");     //8
+  analysisManager->CreateNtupleDColumn("lpx");       //9
+  analysisManager->CreateNtupleDColumn("lpy");       //10
+  analysisManager->CreateNtupleDColumn("lpz");       //11
   analysisManager->FinishNtuple();
 }
 
@@ -68,13 +72,26 @@ RunAction::~RunAction()
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void RunAction::BeginOfRunAction(const G4Run*)
+
+void RunAction::BeginOfRunAction(const G4Run* run)
 {
   fTimer->Start();
-  fEventCount = 0;   // reset the accumulable
+  fEventCount = 0;  // reset the accumulable
+
   G4RunManager::GetRunManager()->SetRandomNumberStore(false);
+
   auto man = G4AnalysisManager::Instance();
-  man->OpenFile("hits.root");
+
+  G4int runID = run->GetRunID();
+
+  std::ostringstream fname;
+  fname << "hits_run"
+        << std::setw(4) << std::setfill('0') << runID
+        << ".root";
+
+  man->OpenFile(fname.str());
+
+  G4cout << "Opened output file: " << fname.str() << G4endl;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -90,13 +107,6 @@ void RunAction::EndOfRunAction(const G4Run* run)
   
   if (nofEvents == 0) return;
 
-
-  // const DetectorConstruction* detectorConstruction
-  //  = static_cast<const DetectorConstruction*>
-  //    (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
-  // G4double mass = detectorConstruction->GetScoringVolume()->GetMass();
-  // G4double dose = edep/mass;
-  // G4double rmsDose = rms/mass;
 
   auto man = G4AnalysisManager::Instance();
   man->Write();

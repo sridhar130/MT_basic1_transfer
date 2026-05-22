@@ -53,6 +53,8 @@ set(MT_SCRIPTS
   init_vis.mac
   vis.mac
   run1.mac
+  runi.mac
+  runn.mac
   )
 
 foreach(_script ${MT_SCRIPTS})
